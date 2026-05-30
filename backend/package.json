@@ -16,8 +16,8 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
     "add:users": "ts-node prisma/add-users.ts",
-    "postinstall": "prisma generate",
-    "render:build": "npm install && npx prisma db push --accept-data-loss && npm run build"
+    "postinstall": "npx prisma generate",
+    "render:build": "npm install --include=dev && npx prisma db push --accept-data-loss && npm run build"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",
