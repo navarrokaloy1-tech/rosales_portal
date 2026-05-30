@@ -1,0 +1,71 @@
+@use '@angular/material' as mat;
+@use './styles/brand' as *;
+
+html {
+  height: 100%;
+  // Material 3 theme. Primary maps to RNHS red (rose palette is the closest
+  // built-in match); tertiary maps to RNHS blue.
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$rose-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  // Override Material 3 system colors so components inherit RNHS brand hues.
+  --mat-sys-primary: var(--rnhs-red);
+  --mat-sys-on-primary: #FFFFFF;
+  --mat-sys-primary-container: #FEE2E2;
+  --mat-sys-on-primary-container: var(--rnhs-red-dark);
+
+  --mat-sys-tertiary: var(--rnhs-blue);
+  --mat-sys-on-tertiary: #FFFFFF;
+
+  --mat-sys-secondary: var(--rnhs-gold);
+  --mat-sys-on-secondary: #1F2937;
+}
+
+body {
+  color-scheme: light;
+  background-color: var(--rnhs-bg);
+  color: var(--rnhs-text);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+  height: 100%;
+  font-family: 'Roboto', 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+a {
+  color: var(--rnhs-blue);
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+// Grade chip utility
+.grade-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: white;
+}
+.grade-chip--excellent { background: var(--grade-excellent); }
+.grade-chip--good      { background: var(--grade-good); }
+.grade-chip--fair      { background: var(--grade-fair); color: #4A2C00; }
+.grade-chip--passing   { background: var(--grade-passing); }
+.grade-chip--failing   { background: var(--grade-failing); }
+.grade-chip--none      { background: #CBD5E1; color: #475569; }
+
+// Scrollbar polish
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }

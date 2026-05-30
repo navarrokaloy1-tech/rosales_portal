@@ -1,0 +1,94 @@
+<mat-sidenav-container class="shell">
+  <mat-sidenav [opened]="opened()" mode="side" class="sidenav">
+    <div class="brand">
+      <img src="assets/images/rnhs-logo.png" alt="RNHS" class="brand-logo"
+           onerror="this.style.display='none'" />
+      <div class="brand-text">
+        <span class="brand-title">RNHS</span>
+        <span class="brand-sub">Class Record</span>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <mat-nav-list>
+      @for (item of navItems(); track item.path) {
+        <a mat-list-item [routerLink]="item.path" routerLinkActive="active">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <small>Rosales National High School</small>
+      <small class="muted">SY 2025-2026 · POC</small>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="topbar">
+      <button mat-icon-button (click)="toggleSidenav()" aria-label="Toggle navigation">
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="topbar-title">Online Class Record</span>
+
+      <span class="spacer"></span>
+
+      <button mat-icon-button [matMenuTriggerFor]="notifMenu"
+              [matBadge]="unreadCount()" [matBadgeHidden]="unreadCount() === 0"
+              matBadgeColor="warn" aria-label="Notifications">
+        <mat-icon>notifications</mat-icon>
+      </button>
+      <mat-menu #notifMenu="matMenu" xPosition="before">
+        <div class="notif-menu">
+          <div class="notif-header">Notifications</div>
+          @if (notifications().length === 0) {
+            <div class="notif-empty">No notifications.</div>
+          }
+          @for (n of notifications(); track n.id) {
+            <button mat-menu-item class="notif-item" [class.unread]="!n.isRead"
+                    (click)="markRead(n.id)">
+              <mat-icon class="notif-icon notif-icon--{{n.type}}">
+                @switch (n.type) {
+                  @case ('grade') { grade }
+                  @case ('reminder') { alarm }
+                  @case ('alert') { warning }
+                  @default { campaign }
+                }
+              </mat-icon>
+              <div class="notif-body">
+                <div class="notif-title">{{ n.title }}</div>
+                <div class="notif-msg">{{ n.message }}</div>
+              </div>
+            </button>
+          }
+        </div>
+      </mat-menu>
+
+      <button mat-button [matMenuTriggerFor]="userMenu" class="user-btn">
+        <div class="avatar" [style.background]="user()?.avatarColor || '#1E3A8A'">
+          {{ initials() }}
+        </div>
+        <span class="user-name">{{ user()?.firstName }} {{ user()?.lastName }}</span>
+        <small class="user-role">· {{ user()?.role }}</small>
+      </button>
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <button mat-menu-item disabled>
+          <mat-icon>account_circle</mat-icon>
+          <span>{{ user()?.email }}</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign out</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

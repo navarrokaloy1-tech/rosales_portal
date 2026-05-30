@@ -1,0 +1,52 @@
+<div class="login-page">
+  <div class="login-bg-overlay"></div>
+
+  <mat-card class="login-card" appearance="outlined">
+    <div class="login-header">
+      <img src="assets/images/rnhs-logo.png" alt="Rosales National High School"
+           class="login-logo" onerror="this.style.display='none'"/>
+      <h1>Rosales National High School</h1>
+      <p class="subtitle">Online Class Record System</p>
+    </div>
+
+    <form (ngSubmit)="submit()" class="login-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email, Employee ID, or Student ID</mat-label>
+        <mat-icon matPrefix>person</mat-icon>
+        <input matInput name="identifier"
+               [ngModel]="identifier()" (ngModelChange)="identifier.set($event)"
+               placeholder="e.g. m.santos@rnhs.edu.ph or T-1001" required
+               autocomplete="username" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <mat-icon matPrefix>lock</mat-icon>
+        <input matInput type="password" name="password"
+               [ngModel]="password()" (ngModelChange)="password.set($event)"
+               required autocomplete="current-password" />
+      </mat-form-field>
+
+      @if (error()) {
+        <div class="error-msg">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <button mat-flat-button color="primary" type="submit" class="sign-in-btn" [disabled]="submitting()">
+        <mat-icon>login</mat-icon>
+        <span>{{ submitting() ? 'Signing in…' : 'Sign in' }}</span>
+      </button>
+
+      <p class="help-text">
+        First-time users sign in with their Employee ID (teachers) or Student ID (students)
+        as both the username and password — you'll be prompted to set a new password.
+      </p>
+    </form>
+
+    <div class="login-footer">
+      <small>POC v1.0</small>
+    </div>
+  </mat-card>
+</div>

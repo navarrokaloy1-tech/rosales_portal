@@ -1,0 +1,61 @@
+// RNHS — Rosales National High School brand palette.
+// Sourced from the school logo: red sun rays, royal-blue sky,
+// golden torch/sun, leaf-green book, cloud-white dove.
+
+:root {
+  // Primary palette
+  --rnhs-red:        #B71C1C;
+  --rnhs-red-dark:   #7F0F0F;
+  --rnhs-red-light:  #E53935;
+
+  --rnhs-blue:       #1E3A8A;
+  --rnhs-blue-dark:  #14246B;
+  --rnhs-blue-light: #3B5BD9;
+
+  --rnhs-gold:       #F5B400;
+  --rnhs-gold-dark:  #C68F00;
+  --rnhs-gold-light: #FFD54F;
+
+  --rnhs-green:      #2E7D32;
+  --rnhs-green-light:#66BB6A;
+
+  // Neutral
+  --rnhs-bg:         #F8FAFC;
+  --rnhs-surface:    #FFFFFF;
+  --rnhs-border:     #E2E8F0;
+  --rnhs-text:       #1F2937;
+  --rnhs-muted:      #64748B;
+
+  // Grade status (DepEd cutoffs)
+  --grade-excellent: var(--rnhs-green);     // >= 90
+  --grade-good:      #43A047;                // 85-89
+  --grade-fair:      var(--rnhs-gold);       // 80-84
+  --grade-passing:   #FB8C00;                // 75-79
+  --grade-failing:   var(--rnhs-red);        // < 75
+
+  // Elevation
+  --rnhs-shadow-sm:  0 1px 2px rgba(15, 23, 42, .06), 0 1px 1px rgba(15, 23, 42, .04);
+  --rnhs-shadow-md:  0 4px 12px rgba(15, 23, 42, .08);
+  --rnhs-shadow-lg:  0 10px 25px rgba(15, 23, 42, .12);
+
+  // Radius
+  --rnhs-radius-sm:  6px;
+  --rnhs-radius-md:  10px;
+  --rnhs-radius-lg:  16px;
+}
+
+// Helper mixins
+@mixin rnhs-card {
+  background: var(--rnhs-surface);
+  border: 1px solid var(--rnhs-border);
+  border-radius: var(--rnhs-radius-md);
+  box-shadow: var(--rnhs-shadow-sm);
+}
+
+@mixin rnhs-section-title {
+  color: var(--rnhs-red);
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+  letter-spacing: 0.01em;
+}

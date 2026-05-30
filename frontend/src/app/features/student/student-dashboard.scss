@@ -1,0 +1,149 @@
+:host { display: block; max-width: 1200px; margin: 0 auto; }
+
+.dash-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+
+  h1 { margin: 0 0 4px; font-size: 1.6rem; color: var(--rnhs-red); font-weight: 600; }
+  .muted { color: var(--rnhs-muted); margin: 0; font-size: 0.9rem; }
+}
+
+.term-toggle ::ng-deep .mat-button-toggle-checked {
+  background: var(--rnhs-red) !important;
+  color: #fff !important;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.kpi-card {
+  display: flex; flex-direction: row; align-items: center; gap: 16px;
+  padding: 18px 20px !important;
+  border-radius: var(--rnhs-radius-md) !important;
+  background: var(--rnhs-surface);
+  border: 1px solid var(--rnhs-border) !important;
+
+  .kpi-icon {
+    font-size: 36px;
+    width: 48px; height: 48px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    background: rgba(30, 58, 138, 0.1);
+    color: var(--rnhs-blue);
+  }
+  .kpi-value { font-size: 1.8rem; font-weight: 700; line-height: 1; color: var(--rnhs-text); }
+  .kpi-label { font-size: 0.8rem; color: var(--rnhs-muted); margin-top: 4px; }
+
+  &--primary {
+    border-color: var(--rnhs-red) !important;
+    .kpi-icon { background: rgba(183, 28, 28, 0.1); color: var(--rnhs-red); }
+    .kpi-value { color: var(--rnhs-red); }
+  }
+  &--blue .kpi-icon { background: rgba(30, 58, 138, 0.1); color: var(--rnhs-blue); }
+  &--warn {
+    border-color: var(--rnhs-gold) !important;
+    background: #FFFBEA;
+    .kpi-icon { background: rgba(245, 180, 0, 0.18); color: var(--rnhs-gold-dark); }
+    .kpi-value { color: var(--rnhs-gold-dark); }
+  }
+}
+
+.section-title {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--rnhs-blue);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 14px;
+  mat-icon { color: var(--rnhs-red); }
+}
+
+.subjects-accordion ::ng-deep .mat-expansion-panel {
+  border-radius: var(--rnhs-radius-md) !important;
+  border: 1px solid var(--rnhs-border) !important;
+  box-shadow: var(--rnhs-shadow-sm) !important;
+  margin-bottom: 12px;
+}
+
+.subject-title {
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+}
+.subject-code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+  background: var(--rnhs-blue);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.subject-name { font-weight: 500; color: var(--rnhs-text); }
+
+.subject-meta {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  .teacher-name {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--rnhs-muted); font-size: 0.85rem;
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+}
+
+.term-grade { font-size: 0.95rem !important; min-width: 3.2rem; }
+.descriptor { font-size: 0.78rem; color: var(--rnhs-muted); font-style: italic; }
+
+.activities-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-top: 8px;
+
+  th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--rnhs-muted);
+    font-weight: 500;
+    border-bottom: 2px solid var(--rnhs-border);
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+  }
+  td {
+    padding: 10px;
+    border-bottom: 1px solid var(--rnhs-border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr.no-score { background: #FFF8E1; }
+
+  .num { text-align: right; }
+  .muted { color: var(--rnhs-muted); }
+}
+
+.type-badge {
+  display: inline-block;
+  min-width: 26px;
+  text-align: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+
+  &--WrittenWork         { background: #DBEAFE; color: #1E3A8A; }
+  &--PerformanceTask     { background: #DCFCE7; color: #166534; }
+  &--TermAssessment      { background: #FEE2E2; color: #991B1B; }
+}
+
+.empty {
+  text-align: center;
+  color: var(--rnhs-muted);
+  padding: 16px;
+  font-style: italic;
+}

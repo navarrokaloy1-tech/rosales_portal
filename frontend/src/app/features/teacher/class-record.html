@@ -1,0 +1,111 @@
+<section class="cr-header">
+  <div>
+    <a routerLink="/teacher" class="back-link">
+      <mat-icon>arrow_back</mat-icon> Back to My Classes
+    </a>
+    <h1>
+      <span class="subject-code">{{ subject()?.code }}</span>
+      {{ subject()?.name }}
+    </h1>
+    <p class="muted">
+      {{ schoolClass()?.name }} ·
+      Teacher: {{ teacher()?.firstName }} {{ teacher()?.lastName }} ·
+      SY {{ schoolClass()?.schoolYear }}
+    </p>
+  </div>
+
+  <div class="actions">
+    <mat-button-toggle-group [value]="term()" (change)="term.set($event.value)" class="term-toggle">
+      <mat-button-toggle [value]="1">Term 1</mat-button-toggle>
+      <mat-button-toggle [value]="2">Term 2</mat-button-toggle>
+      <mat-button-toggle [value]="3">Term 3</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <button mat-stroked-button (click)="exportCsv()">
+      <mat-icon>download</mat-icon> Export CSV
+    </button>
+  </div>
+</section>
+
+@if (!canEdit() && currentUser()?.role === 'Admin') {
+  <div class="banner banner--info">
+    <mat-icon>visibility</mat-icon>
+    Admin view — read-only. Only the assigned teacher can edit this record.
+  </div>
+}
+@if (!canEdit() && currentUser()?.role === 'Teacher') {
+  <div class="banner banner--warn">
+    <mat-icon>lock</mat-icon>
+    You are not the assigned teacher for this subject. View is read-only.
+  </div>
+}
+
+<div class="grid-wrapper">
+  <table class="grade-grid">
+    <thead>
+      <tr>
+        <th class="sticky-col col-name">Student</th>
+        @for (a of activities(); track a.id) {
+          <th class="col-activity"
+              [matTooltip]="a.title + ' · Max: ' + a.maxScore + ' · ' + formatDate(a.dateGiven)">
+            <div class="th-type type-badge type-badge--{{a.type}}">{{ activityTypeLabel(a.type) }}</div>
+            <div class="th-title">{{ a.title }}</div>
+            <div class="th-meta">/{{ a.maxScore }} · {{ formatDate(a.dateGiven) }}</div>
+          </th>
+        }
+        <th class="col-final">Term {{ term() }} Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (st of students(); track st.id) {
+        <tr>
+          <td class="sticky-col col-name">
+            <div class="student-cell">
+              <div class="avatar-sm" [style.background]="st.avatarColor">
+                {{ st.lastName[0] }}{{ st.firstName[0] }}
+              </div>
+              <div>
+                <div class="student-name">{{ st.lastName }}, {{ st.firstName }}</div>
+                <div class="student-lrn">LRN {{ st.lrn }}</div>
+              </div>
+            </div>
+          </td>
+
+          @for (a of activities(); track a.id) {
+            <td class="cell-score" [class.saved-flash]="isRecentlySaved(st.id, a.id)">
+              <input type="number"
+                     [value]="scoreOf(st.id, a.id) ?? ''"
+                     [min]="0" [max]="a.maxScore"
+                     [readOnly]="!canEdit()"
+                     (change)="onScoreChange(st.id, a.id, $any($event.target).value, a.maxScore)"
+                     [attr.aria-label]="'Score for ' + st.firstName + ' on ' + a.title"
+                     class="score-input" />
+            </td>
+          }
+
+          <td class="col-final">
+            @if (termGradeFor(st.id) !== null) {
+              <span [class]="(termGradeFor(st.id) | gradeChip)">
+                {{ termGradeFor(st.id) | number:'1.0-2' }}
+              </span>
+            } @else {
+              <span class="grade-chip grade-chip--none">—</span>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="activities().length + 2" class="empty">
+            No students enrolled in this class.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="legend">
+  <div><span class="legend-dot type-badge--WrittenWork"></span> WW · Written Work (30%)</div>
+  <div><span class="legend-dot type-badge--PerformanceTask"></span> PT · Performance Task (50%)</div>
+  <div><span class="legend-dot type-badge--TermAssessment"></span> TA · Term Assessment (20%)</div>
+</div>

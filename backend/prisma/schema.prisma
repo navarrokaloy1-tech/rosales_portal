@@ -1,0 +1,184 @@
+// Rosales Portal — Prisma schema
+// Mirrors frontend/src/app/core/models/models.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  Student
+  Teacher
+  Admin
+}
+
+enum EnrollmentStatus {
+  Active
+  Dropped
+  Transferred
+}
+
+enum ActivityType {
+  WrittenWork
+  PerformanceTask
+  TermAssessment
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  EXPORT
+  LOCK
+}
+
+enum NotificationType {
+  grade
+  announcement
+  reminder
+  alert
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  lrn                String?  @unique // Learner Reference Number (12-digit DepEd identifier, for records only)
+  studentId          String?  @unique // School-issued student number — used as login + default password
+  employeeId         String?  @unique // Teachers/Admin — used as login + default password
+  firstName          String
+  lastName           String
+  email              String   @unique
+  role               Role
+  avatarColor        String?
+  passwordHash       String?  // null until first login; populated by admin-create flow
+  mustChangePassword Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  advisedClasses SchoolClass[]   @relation("ClassAdviser")
+  taughtSubjects Subject[]       @relation("SubjectTeacher")
+  enrollments    Enrollment[]
+  gradesReceived Grade[]         @relation("GradeStudent")
+  gradesEntered  Grade[]         @relation("GradeEnteredBy")
+  auditEntries   AuditEntry[]
+  notifications  Notification[]
+
+  @@index([role])
+  @@index([lastName, firstName])
+}
+
+model SchoolClass {
+  id         String   @id @default(cuid())
+  name       String   // "Grade 10 - Rizal"
+  gradeLevel Int
+  section    String
+  schoolYear String   // "2025-2026"
+  adviserId  String
+  adviser    User     @relation("ClassAdviser", fields: [adviserId], references: [id])
+  subjects   Subject[]
+  enrollments Enrollment[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([schoolYear, gradeLevel])
+}
+
+model Subject {
+  id        String     @id @default(cuid())
+  code      String     // "MATH10"
+  name      String
+  units     Float      @default(1.0)
+  classId   String
+  class     SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   User       @relation("SubjectTeacher", fields: [teacherId], references: [id])
+  activities Activity[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([classId])
+  @@index([teacherId])
+}
+
+model Enrollment {
+  id        String           @id @default(cuid())
+  studentId String
+  student   User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId   String
+  class     SchoolClass      @relation(fields: [classId], references: [id], onDelete: Cascade)
+  status    EnrollmentStatus @default(Active)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([studentId, classId])
+  @@index([classId, status])
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  subjectId String
+  subject   Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  term      Int          // 1, 2, or 3 (DepEd MATATAG 3-term)
+  type      ActivityType
+  title     String
+  maxScore  Float
+  dateGiven DateTime
+  isLocked  Boolean      @default(false)
+  grades    Grade[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([subjectId, term])
+}
+
+model Grade {
+  id             String   @id @default(cuid())
+  activityId     String
+  activity       Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        User     @relation("GradeStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  score          Float?   // null = not yet submitted
+  remarks        String?
+  enteredById    String
+  enteredBy      User     @relation("GradeEnteredBy", fields: [enteredById], references: [id])
+  enteredAt      DateTime @default(now())
+  lastModifiedAt DateTime @updatedAt
+
+  @@unique([activityId, studentId])
+  @@index([studentId])
+}
+
+model AuditEntry {
+  id         String      @id @default(cuid())
+  actorId    String
+  actor      User        @relation(fields: [actorId], references: [id])
+  action     AuditAction
+  entityType String
+  entityId   String
+  oldValue   Json?
+  newValue   Json?
+  reason     String?
+  occurredAt DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@index([occurredAt])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String
+  recipient   User             @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  type        NotificationType
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  @@index([recipientId, isRead])
+}

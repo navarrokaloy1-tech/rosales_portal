@@ -1,0 +1,138 @@
+:host { display: block; max-width: 1200px; margin: 0 auto; }
+
+.dash-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  h1 { margin: 0 0 4px; font-size: 1.6rem; color: var(--rnhs-red); font-weight: 600; }
+  .muted { color: var(--rnhs-muted); margin: 0; font-size: 0.9rem; }
+}
+.dash-actions { display: flex; gap: 10px; }
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.kpi-card {
+  display: flex; flex-direction: row; align-items: center; gap: 14px;
+  padding: 18px 20px !important;
+  border-radius: var(--rnhs-radius-md) !important;
+  background: var(--rnhs-surface);
+  border: 1px solid var(--rnhs-border) !important;
+  box-shadow: var(--rnhs-shadow-sm) !important;
+
+  .kpi-icon {
+    font-size: 32px;
+    width: 44px; height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: rgba(30, 58, 138, 0.1);
+    color: var(--rnhs-blue);
+  }
+  .kpi-value { font-size: 1.6rem; font-weight: 700; line-height: 1; color: var(--rnhs-text); }
+  .kpi-label { font-size: 0.78rem; color: var(--rnhs-muted); margin-top: 4px; }
+
+  &--red   .kpi-icon { background: rgba(183, 28, 28, 0.10); color: var(--rnhs-red); }
+  &--blue  .kpi-icon { background: rgba(30, 58, 138, 0.10); color: var(--rnhs-blue); }
+  &--green .kpi-icon { background: rgba(46, 125, 50, 0.10); color: var(--rnhs-green); }
+  &--warn {
+    border-color: var(--rnhs-gold) !important;
+    background: #FFFBEA;
+    .kpi-icon { background: rgba(245, 180, 0, 0.18); color: var(--rnhs-gold-dark); }
+    .kpi-value { color: var(--rnhs-gold-dark); }
+  }
+}
+
+.admin-tabs {
+  background: var(--rnhs-surface);
+  border-radius: var(--rnhs-radius-md);
+  border: 1px solid var(--rnhs-border);
+  box-shadow: var(--rnhs-shadow-sm);
+  overflow: hidden;
+
+  ::ng-deep .mat-mdc-tab-header {
+    background: #FAFAFA;
+    border-bottom: 1px solid var(--rnhs-border);
+  }
+  ::ng-deep .mdc-tab--active .mdc-tab__text-label { color: var(--rnhs-red) !important; }
+  ::ng-deep .mdc-tab-indicator__content--underline { border-color: var(--rnhs-red) !important; }
+}
+
+.tab-pane { padding: 20px; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    color: var(--rnhs-muted);
+    font-weight: 500;
+    border-bottom: 2px solid var(--rnhs-border);
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+  }
+  td {
+    padding: 12px;
+    border-bottom: 1px solid var(--rnhs-border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  .num { text-align: right; }
+  .muted { color: var(--rnhs-muted); }
+
+  code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    background: #F1F5F9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--rnhs-text);
+  }
+}
+
+.teacher-cell {
+  display: flex; align-items: center; gap: 10px;
+  .avatar-sm {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 0.72rem;
+  }
+  .t-name { font-weight: 500; }
+  .t-id { font-size: 0.7rem; color: var(--rnhs-muted); }
+}
+
+.action-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+  &--CREATE { background: #DCFCE7; color: #166534; }
+  &--UPDATE { background: #DBEAFE; color: #1E3A8A; }
+  &--DELETE { background: #FEE2E2; color: #991B1B; }
+  &--LOGIN  { background: #F1F5F9; color: #475569; }
+  &--EXPORT { background: #FEF3C7; color: #92400E; }
+  &--LOCK   { background: #E9D5FF; color: #6B21A8; }
+}
+
+.empty {
+  display: flex; align-items: center; gap: 8px;
+  padding: 30px;
+  color: var(--rnhs-green);
+  font-size: 0.95rem;
+  justify-content: center;
+}

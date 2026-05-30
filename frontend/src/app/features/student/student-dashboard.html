@@ -1,0 +1,121 @@
+<section class="dash-header">
+  <div>
+    <h1>Welcome back, {{ user()?.firstName }}!</h1>
+    <p class="muted">
+      {{ studentClass()?.name }} · LRN {{ user()?.lrn }} · SY {{ studentClass()?.schoolYear }}
+    </p>
+  </div>
+
+  <mat-button-toggle-group [value]="term()" (change)="term.set($event.value)" class="term-toggle">
+    <mat-button-toggle [value]="1">Term 1</mat-button-toggle>
+    <mat-button-toggle [value]="2">Term 2</mat-button-toggle>
+    <mat-button-toggle [value]="3">Term 3</mat-button-toggle>
+  </mat-button-toggle-group>
+</section>
+
+<section class="kpi-row">
+  <mat-card appearance="outlined" class="kpi-card kpi-card--primary">
+    <mat-icon class="kpi-icon">grade</mat-icon>
+    <div>
+      <div class="kpi-value">{{ overall() ?? '—' }}</div>
+      <div class="kpi-label">Term Average</div>
+    </div>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="kpi-card kpi-card--blue">
+    <mat-icon class="kpi-icon">menu_book</mat-icon>
+    <div>
+      <div class="kpi-value">{{ subjects().length }}</div>
+      <div class="kpi-label">Subjects</div>
+    </div>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="kpi-card"
+            [class.kpi-card--warn]="atRiskCount() > 0">
+    <mat-icon class="kpi-icon">warning</mat-icon>
+    <div>
+      <div class="kpi-value">{{ atRiskCount() }}</div>
+      <div class="kpi-label">At-Risk Subjects</div>
+    </div>
+  </mat-card>
+</section>
+
+<section>
+  <h2 class="section-title">
+    <mat-icon>school</mat-icon>
+    My Subjects · Term {{ term() }}
+  </h2>
+
+  <mat-accordion multi class="subjects-accordion">
+    @for (s of subjects(); track s.subject.id) {
+      <mat-expansion-panel class="subject-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title class="subject-title">
+            <span class="subject-code">{{ s.subject.code }}</span>
+            <span class="subject-name">{{ s.subject.name }}</span>
+          </mat-panel-title>
+          <mat-panel-description class="subject-meta">
+            <span class="teacher-name">
+              <mat-icon>person</mat-icon> {{ s.teacherName }}
+            </span>
+            @if (s.termGrade) {
+              <span [class]="(s.termGrade.transmutedGrade | gradeChip)" class="term-grade">
+                {{ s.termGrade.transmutedGrade }}
+              </span>
+              <span class="descriptor" [matTooltip]="'Initial: ' + s.termGrade.initialGrade + ' · WW ' + s.termGrade.writtenWorkPct + '% · PT ' + s.termGrade.performanceTaskPct + '% · TA ' + s.termGrade.termAssessmentPct + '%'">
+                {{ s.termGrade.descriptor }}
+              </span>
+            } @else {
+              <span class="grade-chip grade-chip--none">N/A</span>
+            }
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        @if (s.activities.length > 0) {
+          <table class="activities-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Activity</th>
+                <th>Date</th>
+                <th class="num">Score</th>
+                <th class="num">Out of</th>
+                <th class="num">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of s.activities; track a.activity.id) {
+                <tr [class.no-score]="a.score === null">
+                  <td>
+                    <span class="type-badge type-badge--{{a.activity.type}}">
+                      {{ activityTypeLabel(a.activity.type) }}
+                    </span>
+                  </td>
+                  <td>{{ a.activity.title }}</td>
+                  <td class="muted">{{ formatDate(a.activity.dateGiven) }}</td>
+                  <td class="num">
+                    @if (a.score !== null) {
+                      <strong>{{ a.score }}</strong>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                  <td class="num muted">{{ a.activity.maxScore }}</td>
+                  <td class="num">
+                    @if (a.pct !== null) {
+                      <span [class]="(a.pct | gradeChip)">{{ a.pct | number:'1.0-0' }}</span>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="empty">No activities recorded for this term yet.</p>
+        }
+      </mat-expansion-panel>
+    }
+  </mat-accordion>
+</section>

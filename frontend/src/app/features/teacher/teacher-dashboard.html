@@ -1,0 +1,38 @@
+<section class="dash-header">
+  <div>
+    <h1>My Classes</h1>
+    <p class="muted">Select a subject to open its class record.</p>
+  </div>
+</section>
+
+<section class="subjects-grid">
+  @for (s of mySubjects(); track s.subject.id) {
+    <mat-card appearance="outlined" class="subject-card">
+      <div class="subject-card-header">
+        <span class="subject-code">{{ s.subject.code }}</span>
+        <mat-icon class="subject-icon">menu_book</mat-icon>
+      </div>
+      <h3 class="subject-name">{{ s.subject.name }}</h3>
+      <p class="class-name">{{ s.className }}</p>
+
+      <div class="subject-stats">
+        <div class="stat">
+          <mat-icon>group</mat-icon>
+          <span><strong>{{ s.students }}</strong> students</span>
+        </div>
+        <div class="stat">
+          <mat-icon>assignment</mat-icon>
+          <span><strong>{{ s.activities }}</strong> Term 2 activities</span>
+        </div>
+      </div>
+
+      <button mat-flat-button color="primary" class="open-btn"
+              [routerLink]="['/teacher', 'class-record', s.subject.id]">
+        <mat-icon>edit_note</mat-icon>
+        Open Class Record
+      </button>
+    </mat-card>
+  } @empty {
+    <p class="muted empty">No subjects assigned.</p>
+  }
+</section>

@@ -1,0 +1,91 @@
+:host { display: block; max-width: 1200px; margin: 0 auto; }
+
+.dash-header {
+  margin-bottom: 24px;
+  h1 { margin: 0 0 4px; font-size: 1.6rem; color: var(--rnhs-red); font-weight: 600; }
+  .muted { color: var(--rnhs-muted); margin: 0; font-size: 0.9rem; }
+}
+
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.subject-card {
+  padding: 20px !important;
+  border-radius: var(--rnhs-radius-md) !important;
+  border: 1px solid var(--rnhs-border) !important;
+  background: linear-gradient(135deg, #fff 0%, #FFFBEA 100%);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--rnhs-shadow-md) !important;
+    border-color: var(--rnhs-gold) !important;
+  }
+}
+
+.subject-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+
+  .subject-code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.8rem;
+    background: var(--rnhs-blue);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .subject-icon { color: var(--rnhs-red); font-size: 28px; width: 28px; height: 28px; }
+}
+
+.subject-name {
+  margin: 0 0 4px;
+  color: var(--rnhs-text);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.class-name {
+  margin: 0 0 16px;
+  color: var(--rnhs-muted);
+  font-size: 0.9rem;
+}
+
+.subject-stats {
+  display: flex; gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+
+  .stat {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.85rem;
+    color: var(--rnhs-text);
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--rnhs-blue); }
+    strong { color: var(--rnhs-red); }
+  }
+}
+
+.open-btn {
+  margin-top: auto;
+  background: var(--rnhs-red) !important;
+  color: #fff !important;
+  font-weight: 500;
+  &:hover { background: var(--rnhs-red-dark) !important; }
+  mat-icon { margin-right: 6px; }
+}
+
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  font-style: italic;
+}

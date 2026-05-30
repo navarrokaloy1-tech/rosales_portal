@@ -1,0 +1,97 @@
+<section class="page-header">
+  <div>
+    <a routerLink="/admin" class="back-link">
+      <mat-icon>arrow_back</mat-icon> Back to Admin Overview
+    </a>
+    <h1>Add User</h1>
+    <p class="muted">
+      Create a teacher or student account. The default password will be their
+      Employee ID (teachers) or Student ID (students). The user will be required
+      to set a new password on first login.
+    </p>
+  </div>
+</section>
+
+<mat-card appearance="outlined" class="form-card">
+  <div class="mode-row">
+    <mat-button-toggle-group [value]="mode()" (change)="switchMode($event.value)" class="mode-toggle">
+      <mat-button-toggle value="Teacher">
+        <mat-icon>school</mat-icon> Teacher
+      </mat-button-toggle>
+      <mat-button-toggle value="Student">
+        <mat-icon>person</mat-icon> Student
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <form (ngSubmit)="submit()" class="form-grid">
+    @if (mode() === 'Teacher') {
+      <mat-form-field appearance="outline">
+        <mat-label>Employee ID</mat-label>
+        <input matInput name="employeeId"
+               [ngModel]="employeeId()" (ngModelChange)="employeeId.set($event)"
+               placeholder="T-1005" required />
+        <mat-hint>Used as username and default password</mat-hint>
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>Student ID</mat-label>
+        <input matInput name="studentId"
+               [ngModel]="studentId()" (ngModelChange)="studentId.set($event)"
+               placeholder="S-30041" required />
+        <mat-hint>School-issued ID — used as username and default password</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>LRN (optional)</mat-label>
+        <input matInput name="lrn"
+               [ngModel]="lrn()" (ngModelChange)="lrn.set($event)"
+               placeholder="136501230041" />
+        <mat-hint>12-digit DepEd Learner Reference Number</mat-hint>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>First Name</mat-label>
+      <input matInput name="firstName" required
+             [ngModel]="firstName()" (ngModelChange)="firstName.set($event)" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Last Name</mat-label>
+      <input matInput name="lastName" required
+             [ngModel]="lastName()" (ngModelChange)="lastName.set($event)" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-2">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" name="email" required
+             [ngModel]="email()" (ngModelChange)="email.set($event)"
+             placeholder="firstname.lastname@rnhs.edu.ph" />
+    </mat-form-field>
+
+    @if (error()) {
+      <div class="error-msg span-2">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    @if (lastCreated(); as created) {
+      <div class="success-msg span-2">
+        <mat-icon>check_circle</mat-icon>
+        <div>
+          <div><strong>{{ created.name }}</strong> created.</div>
+          <div class="muted">Default password: <code>{{ created.defaultPassword }}</code> — share this with the user; they'll be prompted to change it on first login.</div>
+        </div>
+      </div>
+    }
+
+    <div class="actions span-2">
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        <mat-icon>person_add</mat-icon>
+        {{ submitting() ? 'Creating…' : 'Create ' + mode() }}
+      </button>
+    </div>
+  </form>
+</mat-card>

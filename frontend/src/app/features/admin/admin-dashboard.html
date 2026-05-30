@@ -1,0 +1,142 @@
+<section class="dash-header">
+  <div>
+    <h1>Admin Overview</h1>
+    <p class="muted">RNHS · School Year 2025-2026 · Real-time snapshot</p>
+  </div>
+  <div class="dash-actions">
+    <a mat-flat-button color="primary" routerLink="/admin/add-user">
+      <mat-icon>person_add</mat-icon>
+      Add User
+    </a>
+  </div>
+</section>
+
+<section class="kpi-row">
+  <mat-card class="kpi-card kpi-card--red">
+    <mat-icon class="kpi-icon">groups</mat-icon>
+    <div>
+      <div class="kpi-value">{{ kpis().students }}</div>
+      <div class="kpi-label">Students</div>
+    </div>
+  </mat-card>
+  <mat-card class="kpi-card kpi-card--blue">
+    <mat-icon class="kpi-icon">school</mat-icon>
+    <div>
+      <div class="kpi-value">{{ kpis().teachers }}</div>
+      <div class="kpi-label">Teachers</div>
+    </div>
+  </mat-card>
+  <mat-card class="kpi-card kpi-card--green">
+    <mat-icon class="kpi-icon">class</mat-icon>
+    <div>
+      <div class="kpi-value">{{ kpis().classes }}</div>
+      <div class="kpi-label">Classes</div>
+    </div>
+  </mat-card>
+  <mat-card class="kpi-card kpi-card--blue">
+    <mat-icon class="kpi-icon">menu_book</mat-icon>
+    <div>
+      <div class="kpi-value">{{ kpis().subjects }}</div>
+      <div class="kpi-label">Subjects</div>
+    </div>
+  </mat-card>
+  <mat-card class="kpi-card" [class.kpi-card--warn]="kpis().atRisk > 0">
+    <mat-icon class="kpi-icon">warning</mat-icon>
+    <div>
+      <div class="kpi-value">{{ kpis().atRisk }}</div>
+      <div class="kpi-label">At-Risk Records</div>
+    </div>
+  </mat-card>
+</section>
+
+<mat-tab-group class="admin-tabs" animationDuration="200ms">
+
+  <mat-tab label="At-Risk Students">
+    <div class="tab-pane">
+      @if (atRiskStudents().length === 0) {
+        <p class="empty"><mat-icon>check_circle</mat-icon> No students below 75 this term.</p>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr><th>Student</th><th>Subject</th><th class="num">Term 2 Grade</th></tr>
+          </thead>
+          <tbody>
+            @for (r of atRiskStudents(); track r.studentName + r.subject) {
+              <tr>
+                <td>{{ r.studentName }}</td>
+                <td>{{ r.subject }}</td>
+                <td class="num">
+                  <span [class]="(r.grade | gradeChip)">{{ r.grade | number:'1.0-2' }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Teacher Activity">
+    <div class="tab-pane">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Teacher</th><th class="num">Subjects</th>
+            <th class="num">Activities</th><th class="num">Grades Entered</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of teacherActivity(); track t.teacher.id) {
+            <tr>
+              <td>
+                <div class="teacher-cell">
+                  <div class="avatar-sm" [style.background]="t.teacher.avatarColor">
+                    {{ t.teacher.firstName[0] }}{{ t.teacher.lastName[0] }}
+                  </div>
+                  <div>
+                    <div class="t-name">{{ t.teacher.firstName }} {{ t.teacher.lastName }}</div>
+                    <div class="t-id">{{ t.teacher.employeeId }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="num">{{ t.subjects }}</td>
+              <td class="num">{{ t.activities }}</td>
+              <td class="num"><strong>{{ t.grades }}</strong></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Audit Log">
+    <div class="tab-pane">
+      <table class="data-table audit-table">
+        <thead>
+          <tr>
+            <th>When</th><th>Actor</th><th>Action</th><th>Entity</th><th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of recentAudit(); track a.id) {
+            <tr>
+              <td class="muted">{{ formatDateTime(a.occurredAt) }}</td>
+              <td>{{ a.actorName }}</td>
+              <td>
+                <span class="action-chip action-chip--{{a.action}}">
+                  <mat-icon>{{ actionIcon(a.action) }}</mat-icon>
+                  {{ a.action }}
+                </span>
+              </td>
+              <td>
+                <code>{{ a.entityType }}:{{ a.entityId }}</code>
+              </td>
+              <td class="muted">{{ a.reason ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </mat-tab>
+
+</mat-tab-group>
