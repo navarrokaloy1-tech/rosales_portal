@@ -10,7 +10,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
 import * as XLSX from 'xlsx';
-import ExcelJS from 'exceljs';
+
+import { XlsxEditor } from '../../shared/xlsx-editor';
 
 import { AuthService } from '../../core/services/auth.service';
 import { DataService } from '../../core/services/data.service';
@@ -178,26 +179,22 @@ export class ClassRecordComponent {
 
     this.busy.set('exporting');
     try {
-      // ExcelJS preserves the original template's styling, validations, and helper sheets
-      // (SheetJS Community strips data validations and complex themes, producing files
-      // Excel flags as damaged).
+      // Surgical raw-XML editor: only touches the cells we explicitly set,
+      // leaving every other byte of the template untouched. Both ExcelJS and SheetJS
+      // Community choke on this template's 2M-cell ranges and complex validations.
       const buf = await fetch(TEMPLATE_URL).then(r => {
         if (!r.ok) throw new Error('Template file not found');
         return r.arrayBuffer();
       });
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.load(buf);
+      const editor = await XlsxEditor.load(buf);
 
       // --- INPUT DATA: school + teacher info + student rosters
-      const inp = wb.getWorksheet(TPL.inputData);
-      if (!inp) throw new Error(`Sheet "${TPL.inputData}" missing from template`);
-
-      this.writeCell(inp, TPL.teacherCell, `${tch.lastName.toUpperCase()}, ${tch.firstName.toUpperCase()}`);
-      this.writeCell(inp, TPL.sectionCell, cls.section);
-      this.writeCell(inp, TPL.subjectCell, subject.name);
-      this.writeCell(inp, TPL.gradeLevelCell, cls.gradeLevel);
-      this.writeCell(inp, TPL.schoolNameCell, 'Rosales National High School');
-      this.writeCell(inp, TPL.schoolYearCell, cls.schoolYear);
+      await editor.setCell(TPL.inputData, TPL.teacherCell, `${tch.lastName.toUpperCase()}, ${tch.firstName.toUpperCase()}`);
+      await editor.setCell(TPL.inputData, TPL.sectionCell, cls.section);
+      await editor.setCell(TPL.inputData, TPL.subjectCell, subject.name);
+      await editor.setCell(TPL.inputData, TPL.gradeLevelCell, cls.gradeLevel);
+      await editor.setCell(TPL.inputData, TPL.schoolNameCell, 'Rosales National High School');
+      await editor.setCell(TPL.inputData, TPL.schoolYearCell, cls.schoolYear);
 
       const studs = this.students();
       const males = studs.filter(s => s.sex !== 'Female');
@@ -210,18 +207,18 @@ export class ClassRecordComponent {
         );
       }
 
-      males.slice(0, TPL.maxStudentsPerSex).forEach((s, i) =>
-        this.writeCell(inp, `${TPL.maleNamesCol}${TPL.maleNamesStartRow + i}`, this.studentDisplayName(s)),
-      );
-      females.slice(0, TPL.maxStudentsPerSex).forEach((s, i) =>
-        this.writeCell(inp, `${TPL.femaleNamesCol}${TPL.femaleNamesStartRow + i}`, this.studentDisplayName(s)),
-      );
+      for (let i = 0; i < Math.min(males.length, TPL.maxStudentsPerSex); i++) {
+        await editor.setCell(TPL.inputData, `${TPL.maleNamesCol}${TPL.maleNamesStartRow + i}`, this.studentDisplayName(males[i]));
+      }
+      for (let i = 0; i < Math.min(females.length, TPL.maxStudentsPerSex); i++) {
+        await editor.setCell(TPL.inputData, `${TPL.femaleNamesCol}${TPL.femaleNamesStartRow + i}`, this.studentDisplayName(females[i]));
+      }
 
       // --- TERM 1/2/3 score data
       let truncationWarning = false;
       for (const t of [1, 2, 3] as const) {
-        const sheet = wb.getWorksheet(TPL.termSheet(t));
-        if (!sheet) continue;
+        const sheetName = TPL.termSheet(t);
+        if (!editor.hasSheet(sheetName)) continue;
         const acts = this.data.activitiesForSubject(subject.id, t);
         const ww = acts.filter(a => a.type === 'WrittenWork');
         const pt = acts.filter(a => a.type === 'PerformanceTask');
@@ -232,46 +229,41 @@ export class ClassRecordComponent {
         if (ta.length > TPL.taCols.length) truncationWarning = true;
 
         // Highest possible scores per column
-        ww.slice(0, TPL.wwCols.length).forEach((a, i) =>
-          this.writeCell(sheet, `${TPL.wwCols[i]}${TPL.hpsRow}`, a.maxScore));
-        pt.slice(0, TPL.ptCols.length).forEach((a, i) =>
-          this.writeCell(sheet, `${TPL.ptCols[i]}${TPL.hpsRow}`, a.maxScore));
-        ta.slice(0, TPL.taCols.length).forEach((a, i) =>
-          this.writeCell(sheet, `${TPL.taCols[i]}${TPL.hpsRow}`, a.maxScore));
+        for (let i = 0; i < Math.min(ww.length, TPL.wwCols.length); i++) {
+          await editor.setCell(sheetName, `${TPL.wwCols[i]}${TPL.hpsRow}`, ww[i].maxScore);
+        }
+        for (let i = 0; i < Math.min(pt.length, TPL.ptCols.length); i++) {
+          await editor.setCell(sheetName, `${TPL.ptCols[i]}${TPL.hpsRow}`, pt[i].maxScore);
+        }
+        for (let i = 0; i < Math.min(ta.length, TPL.taCols.length); i++) {
+          await editor.setCell(sheetName, `${TPL.taCols[i]}${TPL.hpsRow}`, ta[i].maxScore);
+        }
 
         // Per-student rows
-        const writeRowsFor = (group: User[], startRow: number) => {
-          group.forEach((stu, idx) => {
+        const writeRowsFor = async (group: User[], startRow: number) => {
+          for (let idx = 0; idx < Math.min(group.length, TPL.maxStudentsPerSex); idx++) {
+            const stu = group[idx];
             const row = startRow + idx;
-            ww.slice(0, TPL.wwCols.length).forEach((a, i) => {
-              const s = this.scoreOf(stu.id, a.id);
-              if (s !== null) this.writeCell(sheet, `${TPL.wwCols[i]}${row}`, s);
-            });
-            pt.slice(0, TPL.ptCols.length).forEach((a, i) => {
-              const s = this.scoreOf(stu.id, a.id);
-              if (s !== null) this.writeCell(sheet, `${TPL.ptCols[i]}${row}`, s);
-            });
-            ta.slice(0, TPL.taCols.length).forEach((a, i) => {
-              const s = this.scoreOf(stu.id, a.id);
-              if (s !== null) this.writeCell(sheet, `${TPL.taCols[i]}${row}`, s);
-            });
-          });
+            for (let i = 0; i < Math.min(ww.length, TPL.wwCols.length); i++) {
+              const s = this.scoreOf(stu.id, ww[i].id);
+              if (s !== null) await editor.setCell(sheetName, `${TPL.wwCols[i]}${row}`, s);
+            }
+            for (let i = 0; i < Math.min(pt.length, TPL.ptCols.length); i++) {
+              const s = this.scoreOf(stu.id, pt[i].id);
+              if (s !== null) await editor.setCell(sheetName, `${TPL.ptCols[i]}${row}`, s);
+            }
+            for (let i = 0; i < Math.min(ta.length, TPL.taCols.length); i++) {
+              const s = this.scoreOf(stu.id, ta[i].id);
+              if (s !== null) await editor.setCell(sheetName, `${TPL.taCols[i]}${row}`, s);
+            }
+          }
         };
 
-        writeRowsFor(males.slice(0, TPL.maxStudentsPerSex), TPL.maleStartRow);
-        writeRowsFor(females.slice(0, TPL.maxStudentsPerSex), TPL.femaleStartRow);
+        await writeRowsFor(males, TPL.maleStartRow);
+        await writeRowsFor(females, TPL.femaleStartRow);
       }
 
-      // Strip data validations + conditional formatting before writing —
-      // ExcelJS throws "Too many properties to enumerate" on the DepEd template's
-      // long dropdown lists (Region/Division/Subject). Layout, formulas, and styles are unaffected.
-      wb.worksheets.forEach(ws => {
-        const w = ws as unknown as { _dataValidations?: { model: Record<string, unknown> }; _conditionalFormattings?: unknown[] };
-        if (w._dataValidations) w._dataValidations.model = {};
-        if (w._conditionalFormattings) w._conditionalFormattings = [];
-      });
-
-      const outBuf = await wb.xlsx.writeBuffer();
+      const outBuf = await editor.save();
       const blob = new Blob([outBuf], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
@@ -400,12 +392,6 @@ export class ClassRecordComponent {
   }
 
   // ---------- helpers ----------
-
-  /** Set a cell's value without clobbering its existing style/format. */
-  private writeCell(sheet: ExcelJS.Worksheet, addr: string, value: string | number) {
-    const cell = sheet.getCell(addr);
-    cell.value = value;
-  }
 
   private studentDisplayName(s: User): string {
     return `${s.lastName.toUpperCase()}, ${s.firstName.toUpperCase()}`;
