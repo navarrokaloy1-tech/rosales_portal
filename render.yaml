@@ -31,11 +31,11 @@ services:
         sync: false           # paste Supabase direct URL (port 5432) for prisma migrations
 
   # ---------------------- Frontend ----------------------
-  # Static sites are served from Render's global CDN — no region field.
+  # Static sites are always free and served from Render's global CDN —
+  # no region or plan field.
   - type: web
     name: rosales-portal
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist/frontend/browser
