@@ -1,0 +1,54 @@
+# Render Blueprint — declarative deploy for Rosales Portal
+# https://render.com/docs/blueprint-spec
+#
+# Two services: a NestJS API (Web Service) and an Angular frontend (Static Site).
+# The PostgreSQL database is on Supabase, NOT Render — so it's referenced via env var only.
+
+services:
+  # ---------------------- Backend API ----------------------
+  - type: web
+    name: rosales-portal-api
+    runtime: node
+    region: singapore        # closest to PH; change if needed
+    plan: free
+    rootDir: backend
+    buildCommand: npm run render:build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 12h
+      - key: JWT_SECRET
+        generateValue: true   # Render auto-generates a strong secret
+      - key: CORS_ORIGIN
+        sync: false           # set manually after frontend is created (e.g. https://rosales-portal.onrender.com)
+      - key: DATABASE_URL
+        sync: false           # paste Supabase pooled URL (port 6543, ?pgbouncer=true)
+      - key: DIRECT_URL
+        sync: false           # paste Supabase direct URL (port 5432) for prisma migrations
+
+  # ---------------------- Frontend ----------------------
+  - type: web
+    name: rosales-portal
+    runtime: static
+    region: singapore
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist/frontend/browser
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      # SPA fallback — all unknown routes load index.html so Angular Router can handle them
+      - type: rewrite
+        source: /*
+        destination: /index.html
