@@ -23,7 +23,8 @@ export class TeacherDashboardComponent {
   readonly mySubjects = computed(() => {
     const u = this.user();
     if (!u) return [];
-    // Admins see all subjects; teachers see their own
+    // Admins see all subjects here; teachers see only their own.
+    // Other teachers' classes for view-only access live at /teacher/other-classes.
     const list = u.role === 'Admin' ? this.data.subjects() : this.data.subjectsForTeacher(u.id);
     return list.map(s => {
       const cls = this.data.classById(s.classId);

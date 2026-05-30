@@ -36,7 +36,20 @@ body {
   margin: 0;
   height: 100%;
   font-family: 'Roboto', 'Segoe UI', sans-serif;
+  position: relative;
 }
+
+// Subtle branded background — visible behind/through page surfaces.
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url('/assets/images/bg-pattern.jpg') center / cover no-repeat;
+  opacity: 0.08;
+  z-index: 0;
+  pointer-events: none;
+}
+body > * { position: relative; z-index: 1; }
 
 * { box-sizing: border-box; }
 

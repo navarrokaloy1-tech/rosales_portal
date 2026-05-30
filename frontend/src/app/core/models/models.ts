@@ -2,13 +2,15 @@ export type Role = 'Student' | 'Teacher' | 'Admin';
 
 export interface User {
   id: string;
-  lrn?: string;          // Learner Reference Number (students)
-  employeeId?: string;   // Teachers/Admin
+  lrn?: string | null;        // Learner Reference Number (12-digit DepEd)
+  studentId?: string | null;  // School-issued student ID (login + default password)
+  employeeId?: string | null; // Teachers/Admin (login + default password)
   firstName: string;
   lastName: string;
   email: string;
   role: Role;
-  avatarColor?: string;
+  avatarColor?: string | null;
+  sex?: 'Male' | 'Female';    // Required for DepEd template export (students)
 }
 
 export interface SchoolClass {

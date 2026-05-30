@@ -1,0 +1,167 @@
+@if (loading()) {
+  <p class="muted center">Loading…</p>
+} @else if (cls(); as c) {
+  <section class="page-header">
+    <div>
+      <a routerLink="/admin/classes" class="back-link">
+        <mat-icon>arrow_back</mat-icon> Back to Classes
+      </a>
+      <h1>
+        <span class="grade-badge">Grade {{ c.gradeLevel }}</span>
+        {{ c.name }}
+      </h1>
+      <p class="muted">
+        Section {{ c.section }} · SY {{ c.schoolYear }}
+      </p>
+    </div>
+  </section>
+
+  <div class="grid-2">
+    <mat-card appearance="outlined" class="panel">
+      <h2><mat-icon>school</mat-icon> Adviser</h2>
+      <p class="muted">The adviser sees all subjects for this class under <em>Other Classes</em>.</p>
+      <div class="adviser-row">
+        <mat-form-field appearance="outline" class="grow">
+          <mat-label>Adviser</mat-label>
+          <mat-select [ngModel]="selectedAdviserId()" (ngModelChange)="selectedAdviserId.set($event)" name="adviser">
+            @for (t of teachers(); track t.id) {
+              <mat-option [value]="t.id">{{ teacherLabel(t) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button mat-flat-button color="primary"
+                [disabled]="savingAdviser() || selectedAdviserId() === c.adviserId"
+                (click)="saveAdviser()">
+          {{ savingAdviser() ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="panel">
+      <h2><mat-icon>menu_book</mat-icon> Subjects ({{ c.subjects.length }})</h2>
+      @if (c.subjects.length === 0) {
+        <p class="muted">No subjects yet.</p>
+      } @else {
+        <ul class="subjects-list">
+          @for (s of c.subjects; track s.id) {
+            <li>
+              <span class="subject-code">{{ s.code }}</span>
+              <span class="subject-name">{{ s.name }}</span>
+              <span class="muted">{{ s.teacher.firstName }} {{ s.teacher.lastName }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </mat-card>
+  </div>
+
+  <mat-card appearance="outlined" class="panel">
+    <div class="panel-head">
+      <h2><mat-icon>group</mat-icon> Enrolled Students ({{ c.enrollments.length }})</h2>
+      <div class="import-actions">
+        <button mat-stroked-button (click)="downloadTemplate()">
+          <mat-icon>download</mat-icon> Download Template
+        </button>
+        <button mat-flat-button color="primary" (click)="openImport()" [disabled]="importing()">
+          <mat-icon>upload_file</mat-icon>
+          {{ importing() ? 'Importing…' : 'Import from Excel' }}
+        </button>
+        <input #importInput type="file"
+               accept=".xlsx,.xls,.csv"
+               (change)="onImportFileChosen($event)"
+               style="display:none" />
+      </div>
+    </div>
+
+    @if (importResult(); as ir) {
+      <div class="import-result" [class.import-result--ok]="ir.skipped.length === 0">
+        <mat-icon>{{ ir.skipped.length === 0 ? 'check_circle' : 'info' }}</mat-icon>
+        <div class="import-result-body">
+          <div><strong>{{ ir.enrolled }}</strong> students enrolled.
+            @if (ir.skipped.length > 0) {
+              <strong>{{ ir.skipped.length }}</strong> skipped:
+            }
+          </div>
+          @if (ir.skipped.length > 0) {
+            <ul class="skip-list">
+              @for (sk of ir.skipped; track sk.row) {
+                <li>Row {{ sk.row }} — {{ sk.reason }}</li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="enroll-row">
+      <mat-form-field appearance="outline" class="grow">
+        <mat-label>Search and enroll a student</mat-label>
+        <input type="text" matInput
+               [matAutocomplete]="auto"
+               [ngModel]="searchText()"
+               (ngModelChange)="onSearchChange($event)"
+               name="studentSearch"
+               placeholder="Type name, student ID, LRN, or email…" />
+        <mat-autocomplete #auto="matAutocomplete"
+                          [displayWith]="displayStudent"
+                          (optionSelected)="onStudentPicked($event)">
+          @for (s of filteredStudents(); track s.id) {
+            <mat-option [value]="s">
+              <div class="opt-line">
+                <span class="opt-name">{{ s.lastName }}, {{ s.firstName }}</span>
+                <span class="opt-id">{{ s.studentId || s.lrn || s.email }}</span>
+              </div>
+            </mat-option>
+          } @empty {
+            <mat-option disabled>No matching students.</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+      <button mat-flat-button color="primary"
+              [disabled]="enrolling() || !selectedStudent()"
+              (click)="enrollStudent()">
+        <mat-icon>person_add</mat-icon>
+        {{ enrolling() ? 'Enrolling…' : 'Enroll' }}
+      </button>
+    </div>
+
+    @if (c.enrollments.length === 0) {
+      <p class="muted empty">No students enrolled yet.</p>
+    } @else {
+      <table class="students-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Student ID</th>
+            <th>LRN</th>
+            <th>Email</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of c.enrollments; track e.id) {
+            <tr>
+              <td>
+                <div class="student-cell">
+                  <div class="avatar" [style.background]="e.student.avatarColor || '#1E3A8A'">
+                    {{ e.student.lastName[0] }}{{ e.student.firstName[0] }}
+                  </div>
+                  <div>{{ e.student.lastName }}, {{ e.student.firstName }}</div>
+                </div>
+              </td>
+              <td class="mono">{{ e.student.studentId || '—' }}</td>
+              <td class="mono">{{ e.student.lrn || '—' }}</td>
+              <td class="muted">{{ e.student.email }}</td>
+              <td class="actions-col">
+                <button mat-icon-button aria-label="Remove student"
+                        (click)="removeEnrollment(e.id, e.student.firstName + ' ' + e.student.lastName)">
+                  <mat-icon>person_remove</mat-icon>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </mat-card>
+}

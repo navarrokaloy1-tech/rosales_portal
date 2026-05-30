@@ -1,0 +1,184 @@
+:host { display: block; max-width: 1200px; margin: 0 auto; }
+
+.page-header {
+  margin-bottom: 24px;
+
+  .back-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--rnhs-blue);
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  }
+  h1 {
+    margin: 0 0 4px;
+    color: var(--rnhs-red);
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .muted { color: var(--rnhs-muted); margin: 0; font-size: 0.9rem; }
+}
+
+.grade-badge {
+  background: var(--rnhs-red);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 800px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+.panel {
+  padding: 20px !important;
+  border-radius: var(--rnhs-radius-md) !important;
+  margin-bottom: 16px;
+
+  h2 {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 0 6px;
+    color: var(--rnhs-blue);
+    font-size: 1.05rem;
+    mat-icon { color: var(--rnhs-blue); }
+  }
+  .muted { color: var(--rnhs-muted); margin: 0 0 10px; font-size: 0.85rem; }
+}
+
+.grow { flex: 1; }
+
+.adviser-row, .enroll-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin-top: 8px;
+
+  mat-form-field { width: 100%; }
+  button { height: 56px; }
+}
+
+.subjects-list {
+  list-style: none;
+  padding: 0; margin: 0;
+
+  li {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rnhs-border);
+    font-size: 0.9rem;
+    &:last-child { border-bottom: none; }
+  }
+  .subject-code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    background: var(--rnhs-blue);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 600;
+  }
+  .subject-name { color: var(--rnhs-text); }
+  .muted { color: var(--rnhs-muted); font-size: 0.8rem; }
+}
+
+.students-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-top: 8px;
+
+  th, td {
+    padding: 10px;
+    border-bottom: 1px solid var(--rnhs-border);
+    text-align: left;
+  }
+  th {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--rnhs-muted);
+    font-weight: 500;
+  }
+  td.mono { font-family: ui-monospace, monospace; font-size: 0.85rem; }
+  td.muted { color: var(--rnhs-muted); }
+  .actions-col { text-align: right; width: 60px; }
+}
+
+.student-cell {
+  display: flex; align-items: center; gap: 10px;
+  .avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 0.7rem;
+  }
+}
+
+.center { text-align: center; padding: 40px; }
+.empty { text-align: center; padding: 30px; font-style: italic; }
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.import-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.import-result {
+  display: flex;
+  gap: 10px;
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+  font-size: 0.9rem;
+
+  &--ok {
+    background: #DCFCE7;
+    color: #166534;
+    border-color: #BBF7D0;
+    mat-icon { color: #166534; }
+  }
+  mat-icon { color: #92400E; flex-shrink: 0; }
+  .import-result-body { flex: 1; }
+  .skip-list {
+    margin: 6px 0 0; padding-left: 20px;
+    font-size: 0.82rem;
+  }
+}
+
+.opt-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  .opt-name { color: var(--rnhs-text); }
+  .opt-id {
+    font-family: ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--rnhs-muted);
+  }
+}

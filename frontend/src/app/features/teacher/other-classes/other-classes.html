@@ -1,0 +1,56 @@
+<section class="dash-header">
+  <div>
+    <h1>
+      <mat-icon class="header-icon">visibility</mat-icon>
+      Other Classes
+    </h1>
+    <p class="muted">
+      As an adviser, you can view (but not edit) class records taught by
+      other teachers for your advisees.
+    </p>
+  </div>
+</section>
+
+@if (notAnAdviser()) {
+  <div class="info-banner">
+    <mat-icon>info</mat-icon>
+    <span>You are not currently the adviser of any class, so there are no other classes to display here.</span>
+  </div>
+}
+
+<section class="subjects-grid">
+  @for (s of subjects(); track s.subject.id) {
+    <mat-card appearance="outlined" class="subject-card">
+      <div class="subject-card-header">
+        <span class="subject-code">{{ s.subject.code }}</span>
+        <span class="readonly-badge">
+          <mat-icon>lock</mat-icon> View only
+        </span>
+      </div>
+      <h3 class="subject-name">{{ s.subject.name }}</h3>
+      <p class="class-name">{{ s.className }}</p>
+      <p class="teacher-name">
+        <mat-icon>person</mat-icon> {{ s.teacherName }}
+      </p>
+
+      <div class="subject-stats">
+        <div class="stat">
+          <mat-icon>group</mat-icon>
+          <span><strong>{{ s.students }}</strong> students</span>
+        </div>
+        <div class="stat">
+          <mat-icon>assignment</mat-icon>
+          <span><strong>{{ s.activities }}</strong> Term 2 activities</span>
+        </div>
+      </div>
+
+      <button mat-stroked-button class="open-btn"
+              [routerLink]="['/teacher', 'class-record', s.subject.id]">
+        <mat-icon>visibility</mat-icon>
+        View Class Record
+      </button>
+    </mat-card>
+  } @empty {
+    <p class="muted empty">No other classes to display.</p>
+  }
+</section>

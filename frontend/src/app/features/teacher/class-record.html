@@ -1,7 +1,7 @@
 <section class="cr-header">
   <div>
-    <a routerLink="/teacher" class="back-link">
-      <mat-icon>arrow_back</mat-icon> Back to My Classes
+    <a [routerLink]="backDestination().path" class="back-link">
+      <mat-icon>arrow_back</mat-icon> {{ backDestination().label }}
     </a>
     <h1>
       <span class="subject-code">{{ subject()?.code }}</span>
@@ -21,9 +21,26 @@
       <mat-button-toggle [value]="3">Term 3</mat-button-toggle>
     </mat-button-toggle-group>
 
-    <button mat-stroked-button (click)="exportCsv()">
-      <mat-icon>download</mat-icon> Export CSV
-    </button>
+    @if (canEdit()) {
+      <button mat-stroked-button
+              [disabled]="busy() !== 'idle'"
+              (click)="openImport()"
+              matTooltip="Upload a filled DepEd 3-Term E-Class Record template">
+        <mat-icon>upload_file</mat-icon>
+        {{ busy() === 'importing' ? 'Importing…' : 'Import' }}
+      </button>
+      <input #importInput type="file"
+             accept=".xlsx,.xls"
+             (change)="onImportFile($event)"
+             style="display:none" />
+      <button mat-flat-button color="primary"
+              [disabled]="busy() !== 'idle'"
+              (click)="exportToDepEdTemplate()"
+              matTooltip="Download the DepEd 3-Term E-Class Record filled with this class's data">
+        <mat-icon>download</mat-icon>
+        {{ busy() === 'exporting' ? 'Exporting…' : 'Export to DepEd Template' }}
+      </button>
+    }
   </div>
 </section>
 

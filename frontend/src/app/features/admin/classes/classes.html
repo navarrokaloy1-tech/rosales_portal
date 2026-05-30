@@ -1,0 +1,128 @@
+<section class="page-header">
+  <div>
+    <a routerLink="/admin" class="back-link">
+      <mat-icon>arrow_back</mat-icon> Back to Admin Overview
+    </a>
+    <h1>Manage Classes</h1>
+    <p class="muted">Create classes, assign advisers, and view enrolled students.</p>
+  </div>
+  <div class="header-actions">
+    <button mat-flat-button color="primary" (click)="openForm()" [disabled]="showForm()">
+      <mat-icon>add</mat-icon> Add Class
+    </button>
+  </div>
+</section>
+
+@if (showForm()) {
+  <mat-card appearance="outlined" class="form-card">
+    <h2>New Class</h2>
+    <form (ngSubmit)="submit()" class="form-grid">
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Class Name</mat-label>
+        <input matInput required
+               [ngModel]="name()" (ngModelChange)="name.set($event)" name="name"
+               placeholder="e.g. Grade 10 - Rizal" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Grade Level</mat-label>
+        <mat-select required
+                    [ngModel]="gradeLevel()" (ngModelChange)="gradeLevel.set($event)" name="gradeLevel">
+          @for (g of gradeLevels; track g) {
+            <mat-option [value]="g">Grade {{ g }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Section</mat-label>
+        <input matInput required
+               [ngModel]="section()" (ngModelChange)="section.set($event)" name="section"
+               placeholder="e.g. Rizal" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>School Year</mat-label>
+        <mat-select required
+                    [ngModel]="schoolYear()" (ngModelChange)="schoolYear.set($event)" name="schoolYear">
+          @for (sy of schoolYearOptions; track sy) {
+            <mat-option [value]="sy">{{ sy }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Adviser</mat-label>
+        <mat-select required
+                    [ngModel]="adviserId()" (ngModelChange)="adviserId.set($event)" name="adviserId">
+          @for (t of teachers(); track t.id) {
+            <mat-option [value]="t.id">{{ teacherLabel(t) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (error()) {
+        <div class="error-msg span-2">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div class="actions span-2">
+        <button mat-stroked-button type="button" (click)="closeForm()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Creating…' : 'Create Class' }}
+        </button>
+      </div>
+    </form>
+  </mat-card>
+}
+
+@if (loading()) {
+  <p class="muted center">Loading classes…</p>
+} @else {
+  <section class="classes-grid">
+    @for (c of sortedClasses(); track c.id) {
+      <mat-card appearance="outlined" class="class-card">
+        <div class="class-header">
+          <div>
+            <div class="grade-badge">Grade {{ c.gradeLevel }}</div>
+            <h3>{{ c.name }}</h3>
+            <p class="muted">SY {{ c.schoolYear }}</p>
+          </div>
+        </div>
+
+        <div class="class-meta">
+          <div class="meta-row">
+            <mat-icon>school</mat-icon>
+            <div>
+              <div class="meta-label">Adviser</div>
+              <div>{{ c.adviser.firstName }} {{ c.adviser.lastName }}</div>
+            </div>
+          </div>
+          <div class="meta-row">
+            <mat-icon>group</mat-icon>
+            <div>
+              <div class="meta-label">Students</div>
+              <div><strong>{{ c._count.enrollments }}</strong> enrolled</div>
+            </div>
+          </div>
+          <div class="meta-row">
+            <mat-icon>menu_book</mat-icon>
+            <div>
+              <div class="meta-label">Subjects</div>
+              <div><strong>{{ c._count.subjects }}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <a mat-stroked-button class="open-btn"
+           [routerLink]="['/admin/classes', c.id]">
+          <mat-icon>edit</mat-icon> Manage
+        </a>
+      </mat-card>
+    } @empty {
+      <p class="muted center empty">No classes yet. Click <strong>Add Class</strong> to create one.</p>
+    }
+  </section>
+}

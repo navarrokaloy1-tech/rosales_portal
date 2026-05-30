@@ -38,6 +38,12 @@ export const routes: Routes = [
           import('./features/teacher/teacher-dashboard').then(m => m.TeacherDashboardComponent),
       },
       {
+        path: 'teacher/other-classes',
+        canActivate: [roleGuard(['Teacher', 'Admin'])],
+        loadComponent: () =>
+          import('./features/teacher/other-classes/other-classes').then(m => m.OtherClassesComponent),
+      },
+      {
         path: 'teacher/class-record/:subjectId',
         canActivate: [roleGuard(['Teacher', 'Admin'])],
         loadComponent: () =>
@@ -54,6 +60,18 @@ export const routes: Routes = [
         canActivate: [roleGuard(['Admin'])],
         loadComponent: () =>
           import('./features/admin/add-user/add-user').then(m => m.AdminAddUserComponent),
+      },
+      {
+        path: 'admin/classes',
+        canActivate: [roleGuard(['Admin'])],
+        loadComponent: () =>
+          import('./features/admin/classes/classes').then(m => m.AdminClassesComponent),
+      },
+      {
+        path: 'admin/classes/:id',
+        canActivate: [roleGuard(['Admin'])],
+        loadComponent: () =>
+          import('./features/admin/class-detail/class-detail').then(m => m.AdminClassDetailComponent),
       },
     ],
   },

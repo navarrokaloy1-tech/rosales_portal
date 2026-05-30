@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, Input, signal, ViewChild } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -9,19 +9,48 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
+import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 import { AuthService } from '../../core/services/auth.service';
 import { DataService } from '../../core/services/data.service';
-import { Activity, Term } from '../../core/models/models';
+import { Activity, Term, User } from '../../core/models/models';
 import { GradeChipPipe } from '../../shared/grade-chip.pipe';
 
-interface CellState {
-  studentId: string;
-  activityId: string;
-  value: number | null;
-  dirty: boolean;
-  saved: boolean;
-}
+// Bundled from src/app/shared/assets via angular.json assets config.
+const TEMPLATE_URL = '/assets/shared/SSHS-20Three-Term-20E-Class-20Record-20v2.xlsx';
+
+// DepEd template layout — derived from SSHS Three-Term E-Class Record v2.
+// INPUT DATA sheet:
+//   F22 = teacher, F25 = section, F28 = subject, G24 = grade level, F16 = school year
+//   L11..L60 = male student names (50 slots), O11..O60 = female student names
+// TERM N sheet (N = 1, 2, 3):
+//   Rows 13-62 = MALE (50 slots), Rows 64-113 = FEMALE (50 slots)
+//   F..J = WW 1-5, N..P = PT 1-3, T..V = TA SA1/SA2/TE
+//   Row 11 = Highest Possible Score per column
+const TPL = {
+  inputData: 'INPUT DATA',
+  termSheet: (n: 1 | 2 | 3) => `TERM ${n}`,
+  // Header cells in INPUT DATA we overwrite
+  teacherCell: 'F22',
+  sectionCell: 'F25',
+  subjectCell: 'F28',
+  gradeLevelCell: 'G24',
+  schoolNameCell: 'F14',
+  schoolYearCell: 'F16',
+  maleNamesStartRow: 11,
+  femaleNamesStartRow: 11,
+  maleNamesCol: 'L',
+  femaleNamesCol: 'O',
+  maxStudentsPerSex: 50,
+  // TERM N score columns by activity type (and HPS row 11)
+  hpsRow: 11,
+  maleStartRow: 13,
+  femaleStartRow: 64,
+  wwCols: ['F', 'G', 'H', 'I', 'J'] as const,
+  ptCols: ['N', 'O', 'P'] as const,
+  taCols: ['T', 'U', 'V'] as const,
+};
 
 @Component({
   selector: 'app-class-record',
@@ -41,9 +70,12 @@ export class ClassRecordComponent {
   private data = inject(DataService);
   private snack = inject(MatSnackBar);
 
+  @ViewChild('importInput') importInput?: ElementRef<HTMLInputElement>;
+
   readonly currentUser = this.auth.currentUser;
   readonly term = signal<Term>(2);
   readonly recentlySaved = signal<Set<string>>(new Set());
+  readonly busy = signal<'idle' | 'exporting' | 'importing'>('idle');
 
   readonly subject = computed(() => this.data.subjectById(this.subjectId));
   readonly schoolClass = computed(() => {
@@ -57,6 +89,15 @@ export class ClassRecordComponent {
     const u = this.currentUser();
     const s = this.subject();
     return !!u && !!s && u.role === 'Teacher' && u.id === s.teacherId;
+  });
+
+  readonly backDestination = computed(() => {
+    const u = this.currentUser();
+    const s = this.subject();
+    const isOwn = !!u && !!s && u.role === 'Teacher' && u.id === s.teacherId;
+    return isOwn
+      ? { path: '/teacher', label: 'Back to My Classes' }
+      : { path: '/teacher/other-classes', label: 'Back to Other Classes' };
   });
 
   readonly students = computed(() => {
@@ -113,26 +154,6 @@ export class ClassRecordComponent {
     return this.recentlySaved().has(`${studentId}-${activityId}`);
   }
 
-  exportCsv() {
-    const acts = this.activities();
-    const students = this.students();
-    const header = ['LRN', 'Name', ...acts.map(a => `"${a.title} (${a.maxScore})"`), 'Term Grade'];
-    const rows = students.map(s => {
-      const scores = acts.map(a => this.scoreOf(s.id, a.id) ?? '');
-      const t = this.termGradeFor(s.id) ?? '';
-      return [s.lrn, `"${s.lastName}, ${s.firstName}"`, ...scores, t].join(',');
-    });
-    const csv = [header.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${this.subject()?.code}-T${this.term()}-classrecord.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    this.snack.open('Class record exported.', 'OK', { duration: 2500 });
-  }
-
   activityTypeLabel(t: Activity['type']): string {
     switch (t) {
       case 'WrittenWork': return 'WW';
@@ -143,5 +164,250 @@ export class ClassRecordComponent {
 
   formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+  }
+
+  // =====================================================================
+  // DepEd Template Export
+  // =====================================================================
+
+  async exportToDepEdTemplate() {
+    const subject = this.subject();
+    const cls = this.schoolClass();
+    const tch = this.teacher();
+    if (!subject || !cls || !tch) return;
+
+    this.busy.set('exporting');
+    try {
+      // ExcelJS preserves the original template's styling, validations, and helper sheets
+      // (SheetJS Community strips data validations and complex themes, producing files
+      // Excel flags as damaged).
+      const buf = await fetch(TEMPLATE_URL).then(r => {
+        if (!r.ok) throw new Error('Template file not found');
+        return r.arrayBuffer();
+      });
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buf);
+
+      // --- INPUT DATA: school + teacher info + student rosters
+      const inp = wb.getWorksheet(TPL.inputData);
+      if (!inp) throw new Error(`Sheet "${TPL.inputData}" missing from template`);
+
+      this.writeCell(inp, TPL.teacherCell, `${tch.lastName.toUpperCase()}, ${tch.firstName.toUpperCase()}`);
+      this.writeCell(inp, TPL.sectionCell, cls.section);
+      this.writeCell(inp, TPL.subjectCell, subject.name);
+      this.writeCell(inp, TPL.gradeLevelCell, cls.gradeLevel);
+      this.writeCell(inp, TPL.schoolNameCell, 'Rosales National High School');
+      this.writeCell(inp, TPL.schoolYearCell, cls.schoolYear);
+
+      const studs = this.students();
+      const males = studs.filter(s => s.sex !== 'Female');
+      const females = studs.filter(s => s.sex === 'Female');
+
+      if (males.length > TPL.maxStudentsPerSex || females.length > TPL.maxStudentsPerSex) {
+        this.snack.open(
+          `Class exceeds template capacity (max ${TPL.maxStudentsPerSex} per sex). Extras will be skipped.`,
+          'OK', { duration: 4000 },
+        );
+      }
+
+      males.slice(0, TPL.maxStudentsPerSex).forEach((s, i) =>
+        this.writeCell(inp, `${TPL.maleNamesCol}${TPL.maleNamesStartRow + i}`, this.studentDisplayName(s)),
+      );
+      females.slice(0, TPL.maxStudentsPerSex).forEach((s, i) =>
+        this.writeCell(inp, `${TPL.femaleNamesCol}${TPL.femaleNamesStartRow + i}`, this.studentDisplayName(s)),
+      );
+
+      // --- TERM 1/2/3 score data
+      let truncationWarning = false;
+      for (const t of [1, 2, 3] as const) {
+        const sheet = wb.getWorksheet(TPL.termSheet(t));
+        if (!sheet) continue;
+        const acts = this.data.activitiesForSubject(subject.id, t);
+        const ww = acts.filter(a => a.type === 'WrittenWork');
+        const pt = acts.filter(a => a.type === 'PerformanceTask');
+        const ta = acts.filter(a => a.type === 'TermAssessment');
+
+        if (ww.length > TPL.wwCols.length) truncationWarning = true;
+        if (pt.length > TPL.ptCols.length) truncationWarning = true;
+        if (ta.length > TPL.taCols.length) truncationWarning = true;
+
+        // Highest possible scores per column
+        ww.slice(0, TPL.wwCols.length).forEach((a, i) =>
+          this.writeCell(sheet, `${TPL.wwCols[i]}${TPL.hpsRow}`, a.maxScore));
+        pt.slice(0, TPL.ptCols.length).forEach((a, i) =>
+          this.writeCell(sheet, `${TPL.ptCols[i]}${TPL.hpsRow}`, a.maxScore));
+        ta.slice(0, TPL.taCols.length).forEach((a, i) =>
+          this.writeCell(sheet, `${TPL.taCols[i]}${TPL.hpsRow}`, a.maxScore));
+
+        // Per-student rows
+        const writeRowsFor = (group: User[], startRow: number) => {
+          group.forEach((stu, idx) => {
+            const row = startRow + idx;
+            ww.slice(0, TPL.wwCols.length).forEach((a, i) => {
+              const s = this.scoreOf(stu.id, a.id);
+              if (s !== null) this.writeCell(sheet, `${TPL.wwCols[i]}${row}`, s);
+            });
+            pt.slice(0, TPL.ptCols.length).forEach((a, i) => {
+              const s = this.scoreOf(stu.id, a.id);
+              if (s !== null) this.writeCell(sheet, `${TPL.ptCols[i]}${row}`, s);
+            });
+            ta.slice(0, TPL.taCols.length).forEach((a, i) => {
+              const s = this.scoreOf(stu.id, a.id);
+              if (s !== null) this.writeCell(sheet, `${TPL.taCols[i]}${row}`, s);
+            });
+          });
+        };
+
+        writeRowsFor(males.slice(0, TPL.maxStudentsPerSex), TPL.maleStartRow);
+        writeRowsFor(females.slice(0, TPL.maxStudentsPerSex), TPL.femaleStartRow);
+      }
+
+      // Strip data validations + conditional formatting before writing —
+      // ExcelJS throws "Too many properties to enumerate" on the DepEd template's
+      // long dropdown lists (Region/Division/Subject). Layout, formulas, and styles are unaffected.
+      wb.worksheets.forEach(ws => {
+        const w = ws as unknown as { _dataValidations?: { model: Record<string, unknown> }; _conditionalFormattings?: unknown[] };
+        if (w._dataValidations) w._dataValidations.model = {};
+        if (w._conditionalFormattings) w._conditionalFormattings = [];
+      });
+
+      const outBuf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([outBuf], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const filename = `${subject.code}-${cls.section}-${cls.schoolYear}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      const msg = truncationWarning
+        ? 'Exported. ⚠️ Some activities exceeded the template\'s fixed columns and were truncated.'
+        : 'Exported successfully.';
+      this.snack.open(msg, 'OK', { duration: truncationWarning ? 5000 : 2500 });
+    } catch (e: any) {
+      this.snack.open(`Export failed: ${e?.message ?? 'unknown error'}`, 'OK', { duration: 4000 });
+    } finally {
+      this.busy.set('idle');
+    }
+  }
+
+  // =====================================================================
+  // DepEd Template Import
+  // =====================================================================
+
+  openImport() {
+    if (!this.canEdit()) {
+      this.snack.open('Only the assigned teacher can import grades.', 'OK', { duration: 3000 });
+      return;
+    }
+    this.importInput?.nativeElement.click();
+  }
+
+  async onImportFile(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = '';
+    if (!this.canEdit()) return;
+
+    const subject = this.subject();
+    const editor = this.currentUser();
+    if (!subject || !editor) return;
+
+    this.busy.set('importing');
+    let updated = 0;
+    const skipped: string[] = [];
+
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+
+      // Build a name → student lookup from this class's roster.
+      const studs = this.students();
+      const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const byNorm = new Map<string, User>();
+      for (const s of studs) {
+        byNorm.set(norm(`${s.lastName} ${s.firstName}`), s);
+        byNorm.set(norm(`${s.lastName}, ${s.firstName}`), s);
+      }
+
+      const inp = wb.Sheets[TPL.inputData];
+      if (!inp) throw new Error('INPUT DATA sheet missing — is this the DepEd template?');
+
+      const resolveRoster = (col: string, startRow: number, count: number) => {
+        const out: { student: User | null; row: number }[] = [];
+        for (let i = 0; i < count; i++) {
+          const v = inp[`${col}${startRow + i}`]?.v;
+          if (v === undefined || v === '' || v === 0) { out.push({ student: null, row: startRow + i }); continue; }
+          out.push({ student: byNorm.get(norm(String(v))) ?? null, row: startRow + i });
+        }
+        return out;
+      };
+
+      const maleRoster   = resolveRoster(TPL.maleNamesCol,   TPL.maleNamesStartRow,   TPL.maxStudentsPerSex);
+      const femaleRoster = resolveRoster(TPL.femaleNamesCol, TPL.femaleNamesStartRow, TPL.maxStudentsPerSex);
+
+      for (const t of [1, 2, 3] as const) {
+        const sheet = wb.Sheets[TPL.termSheet(t)];
+        if (!sheet) continue;
+        const acts = this.data.activitiesForSubject(subject.id, t);
+        const ww = acts.filter(a => a.type === 'WrittenWork').slice(0, TPL.wwCols.length);
+        const pt = acts.filter(a => a.type === 'PerformanceTask').slice(0, TPL.ptCols.length);
+        const ta = acts.filter(a => a.type === 'TermAssessment').slice(0, TPL.taCols.length);
+
+        const applyRow = (rosterEntry: { student: User | null }, sheetRow: number) => {
+          if (!rosterEntry.student) return;
+          const stu = rosterEntry.student;
+          const readAndSet = (col: string, activity: Activity) => {
+            const v = sheet[`${col}${sheetRow}`]?.v;
+            if (v === undefined || v === '' || v === null) return;
+            const score = Number(v);
+            if (isNaN(score)) { skipped.push(`Term ${t} ${stu.firstName} ${stu.lastName} ${activity.title}: not a number`); return; }
+            if (score < 0 || score > activity.maxScore) { skipped.push(`Term ${t} ${stu.firstName} ${stu.lastName} ${activity.title}: out of range (0..${activity.maxScore})`); return; }
+            const existing = this.scoreOf(stu.id, activity.id);
+            if (existing === score) return; // no-op
+            try {
+              this.data.setGrade(activity.id, stu.id, score, editor);
+              updated++;
+            } catch (e: any) {
+              skipped.push(`Term ${t} ${stu.firstName} ${stu.lastName} ${activity.title}: ${e?.message ?? 'failed'}`);
+            }
+          };
+          ww.forEach((a, i) => readAndSet(TPL.wwCols[i], a));
+          pt.forEach((a, i) => readAndSet(TPL.ptCols[i], a));
+          ta.forEach((a, i) => readAndSet(TPL.taCols[i], a));
+        };
+
+        maleRoster.forEach((r, i)   => applyRow(r, TPL.maleStartRow + i));
+        femaleRoster.forEach((r, i) => applyRow(r, TPL.femaleStartRow + i));
+      }
+
+      this.snack.open(
+        skipped.length === 0
+          ? `Imported ${updated} score updates.`
+          : `Imported ${updated} updates, ${skipped.length} skipped. First: ${skipped[0]}`,
+        'OK',
+        { duration: skipped.length === 0 ? 3000 : 6000 },
+      );
+    } catch (e: any) {
+      this.snack.open(`Import failed: ${e?.message ?? 'unknown error'}`, 'OK', { duration: 4000 });
+    } finally {
+      this.busy.set('idle');
+    }
+  }
+
+  // ---------- helpers ----------
+
+  /** Set a cell's value without clobbering its existing style/format. */
+  private writeCell(sheet: ExcelJS.Worksheet, addr: string, value: string | number) {
+    const cell = sheet.getCell(addr);
+    cell.value = value;
+  }
+
+  private studentDisplayName(s: User): string {
+    return `${s.lastName.toUpperCase()}, ${s.firstName.toUpperCase()}`;
   }
 }
