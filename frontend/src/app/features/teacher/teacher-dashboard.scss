@@ -1,10 +1,37 @@
 :host { display: block; max-width: 1200px; margin: 0 auto; }
 
 .dash-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 24px;
   h1 { margin: 0 0 4px; font-size: 1.6rem; color: var(--rnhs-red); font-weight: 600; }
   .muted { color: var(--rnhs-muted); margin: 0; font-size: 0.9rem; }
 }
+
+.form-card {
+  padding: 22px !important;
+  margin-bottom: 24px;
+  h2 { margin: 0 0 14px; font-size: 1.1rem; color: var(--rnhs-blue); }
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.span-2 { grid-column: 1 / -1; }
+mat-form-field { width: 100%; }
+.error-msg {
+  display: flex; align-items: center; gap: 8px;
+  background: #FEE2E2; color: #991B1B;
+  padding: 10px 12px; border-radius: 8px; font-size: 0.9rem;
+}
+.actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+.card-actions { display: flex; }
 
 .subjects-grid {
   display: grid;

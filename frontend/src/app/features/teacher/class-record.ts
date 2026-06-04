@@ -214,6 +214,20 @@ export class ClassRecordComponent {
         await editor.setCell(TPL.inputData, `${TPL.femaleNamesCol}${TPL.femaleNamesStartRow + i}`, this.studentDisplayName(females[i]));
       }
 
+      // Also write names directly into each TERM sheet's B column, overriding the
+      // template's formula reference. This guarantees names display even if Excel
+      // skips formula recalculation on open.
+      for (const t of [1, 2, 3] as const) {
+        const sheetName = TPL.termSheet(t);
+        if (!editor.hasSheet(sheetName)) continue;
+        for (let i = 0; i < Math.min(males.length, TPL.maxStudentsPerSex); i++) {
+          await editor.setCell(sheetName, `B${TPL.maleStartRow + i}`, this.studentDisplayName(males[i]));
+        }
+        for (let i = 0; i < Math.min(females.length, TPL.maxStudentsPerSex); i++) {
+          await editor.setCell(sheetName, `B${TPL.femaleStartRow + i}`, this.studentDisplayName(females[i]));
+        }
+      }
+
       // --- TERM 1/2/3 score data
       let truncationWarning = false;
       for (const t of [1, 2, 3] as const) {

@@ -13,6 +13,7 @@ import { MatDividerModule } from '@angular/material/divider';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { DataService } from '../../../core/services/data.service';
+import { SubjectsApiService } from '../../../core/services/subjects-api.service';
 
 interface NavItem { label: string; icon: string; path: string; }
 
@@ -29,6 +30,7 @@ interface NavItem { label: string; icon: string; path: string; }
 export class AppShellComponent {
   private auth = inject(AuthService);
   private data = inject(DataService);
+  private subjectsApi = inject(SubjectsApiService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 
@@ -43,6 +45,12 @@ export class AppShellComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(e => this._currentUrl.set(e.urlAfterRedirects));
+
+    // Hydrate subjects from backend so newly-created subjects (admin/teacher CRUD)
+    // appear in dashboards alongside the seeded mock subjects.
+    this.subjectsApi.list()
+      .then(subjects => this.data.replaceSubjects(subjects))
+      .catch(() => { /* fall back to mock-data already loaded */ });
   }
 
   /**

@@ -45,6 +45,27 @@ export class DataService {
     return this._subjects().filter(s => s.teacherId === teacherId);
   }
 
+  // ---------------------------------------------------------------------
+  // Mutators for backend-hydrated data (subjects sync)
+  // ---------------------------------------------------------------------
+  /** Replace the in-memory subjects list (used by hydrate-from-backend). */
+  replaceSubjects(subjects: Subject[]) {
+    this._subjects.set(subjects);
+  }
+
+  /** Add or replace a single subject (used after create/update via backend). */
+  upsertSubject(s: Subject) {
+    this._subjects.update(list => {
+      const without = list.filter(x => x.id !== s.id);
+      return [...without, s];
+    });
+  }
+
+  /** Remove a subject from the in-memory list (used after backend delete). */
+  removeSubject(id: string) {
+    this._subjects.update(list => list.filter(s => s.id !== id));
+  }
+
   studentsInClass(classId: string): User[] {
     const ids = new Set(this._enrollments().filter(e => e.classId === classId && e.status === 'Active').map(e => e.studentId));
     return this._users().filter(u => ids.has(u.id));

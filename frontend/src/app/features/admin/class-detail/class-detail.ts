@@ -14,7 +14,9 @@ import * as XLSX from 'xlsx';
 
 import { ClassesApiService, ClassDetail } from '../../../core/services/classes-api.service';
 import { EnrollmentsApiService } from '../../../core/services/enrollments-api.service';
+import { SubjectsApiService } from '../../../core/services/subjects-api.service';
 import { UsersApiService } from '../../../core/services/users-api.service';
+import { DataService } from '../../../core/services/data.service';
 import { User } from '../../../core/models/models';
 
 interface ImportResult {
@@ -38,7 +40,9 @@ export class AdminClassDetailComponent {
 
   private classesApi = inject(ClassesApiService);
   private enrollmentsApi = inject(EnrollmentsApiService);
+  private subjectsApi = inject(SubjectsApiService);
   private usersApi = inject(UsersApiService);
+  private data = inject(DataService);
   private snack = inject(MatSnackBar);
 
   @ViewChild('importInput') importInput?: ElementRef<HTMLInputElement>;
@@ -50,6 +54,15 @@ export class AdminClassDetailComponent {
 
   readonly selectedAdviserId = signal('');
   readonly savingAdviser = signal(false);
+
+  // Add subject form
+  readonly showSubjectForm = signal(false);
+  readonly subjCode = signal('');
+  readonly subjName = signal('');
+  readonly subjTeacherId = signal('');
+  readonly subjUnits = signal<number>(1);
+  readonly addingSubject = signal(false);
+  readonly subjectError = signal<string | null>(null);
 
   // Searchable enroll picker state
   readonly searchText = signal('');
@@ -162,6 +175,58 @@ export class AdminClassDetailComponent {
       this.snack.open(this.extractError(e, 'Could not enroll student.'), 'OK', { duration: 3500 });
     } finally {
       this.enrolling.set(false);
+    }
+  }
+
+  // ----------------------- Subjects management -----------------------
+
+  openSubjectForm() {
+    this.showSubjectForm.set(true);
+    this.subjectError.set(null);
+  }
+  closeSubjectForm() {
+    this.showSubjectForm.set(false);
+    this.subjCode.set('');
+    this.subjName.set('');
+    this.subjTeacherId.set('');
+    this.subjUnits.set(1);
+  }
+
+  async addSubject() {
+    this.subjectError.set(null);
+    if (!this.subjCode().trim() || !this.subjName().trim() || !this.subjTeacherId()) {
+      this.subjectError.set('Code, name, and teacher are required.');
+      return;
+    }
+    this.addingSubject.set(true);
+    try {
+      const created = await this.subjectsApi.create({
+        classId: this.id,
+        code: this.subjCode().trim(),
+        name: this.subjName().trim(),
+        teacherId: this.subjTeacherId(),
+        units: this.subjUnits(),
+      });
+      this.data.upsertSubject(created);
+      this.snack.open(`Subject "${created.code}" added.`, 'OK', { duration: 2500 });
+      this.closeSubjectForm();
+      await this.refresh();
+    } catch (e: unknown) {
+      this.subjectError.set(this.extractError(e, 'Could not add subject.'));
+    } finally {
+      this.addingSubject.set(false);
+    }
+  }
+
+  async removeSubject(subjectId: string, code: string) {
+    if (!confirm(`Remove subject "${code}" from this class?`)) return;
+    try {
+      await this.subjectsApi.delete(subjectId);
+      this.data.removeSubject(subjectId);
+      this.snack.open(`Subject "${code}" removed.`, 'OK', { duration: 2500 });
+      await this.refresh();
+    } catch (e: unknown) {
+      this.snack.open(this.extractError(e, 'Could not remove subject.'), 'OK', { duration: 3500 });
     }
   }
 

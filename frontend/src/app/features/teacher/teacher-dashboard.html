@@ -3,14 +3,82 @@
     <h1>My Classes</h1>
     <p class="muted">Select a subject to open its class record.</p>
   </div>
+  <div class="header-actions">
+    <button mat-flat-button color="primary" (click)="openForm()" [disabled]="showForm()">
+      <mat-icon>add</mat-icon> Add Class
+    </button>
+  </div>
 </section>
+
+@if (showForm()) {
+  <mat-card appearance="outlined" class="form-card">
+    <h2>Add a Class You Teach</h2>
+    <form (ngSubmit)="submit()" class="form-grid">
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Class / Section</mat-label>
+        <mat-select required
+                    [ngModel]="classId()" (ngModelChange)="classId.set($event)"
+                    name="classId">
+          @for (c of classes(); track c.id) {
+            <mat-option [value]="c.id">{{ c.name }} · SY {{ c.schoolYear }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Classes are created by Admin. If yours isn't listed, ask Admin to add it.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Subject Code</mat-label>
+        <input matInput required
+               [ngModel]="code()" (ngModelChange)="code.set($event)" name="code"
+               placeholder="MATH10" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Subject Name</mat-label>
+        <input matInput required
+               [ngModel]="name()" (ngModelChange)="name.set($event)" name="name"
+               placeholder="Mathematics 10" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Units</mat-label>
+        <input matInput type="number" min="0.5" step="0.5"
+               [ngModel]="units()" (ngModelChange)="units.set($event)" name="units" />
+      </mat-form-field>
+
+      @if (error()) {
+        <div class="error-msg span-2">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div class="actions span-2">
+        <button mat-stroked-button type="button" (click)="closeForm()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Adding…' : 'Add Class' }}
+        </button>
+      </div>
+    </form>
+  </mat-card>
+}
 
 <section class="subjects-grid">
   @for (s of mySubjects(); track s.subject.id) {
     <mat-card appearance="outlined" class="subject-card">
       <div class="subject-card-header">
         <span class="subject-code">{{ s.subject.code }}</span>
-        <mat-icon class="subject-icon">menu_book</mat-icon>
+        <div class="card-actions">
+          <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Class menu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="removeSubject(s.subject.id, s.subject.code)">
+              <mat-icon>delete</mat-icon>
+              <span>Remove</span>
+            </button>
+          </mat-menu>
+        </div>
       </div>
       <h3 class="subject-name">{{ s.subject.name }}</h3>
       <p class="class-name">{{ s.className }}</p>
@@ -33,6 +101,6 @@
       </button>
     </mat-card>
   } @empty {
-    <p class="muted empty">No subjects assigned.</p>
+    <p class="muted empty">No classes yet. Click <strong>Add Class</strong> to create one.</p>
   }
 </section>

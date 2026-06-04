@@ -38,9 +38,60 @@
     </mat-card>
 
     <mat-card appearance="outlined" class="panel">
-      <h2><mat-icon>menu_book</mat-icon> Subjects ({{ c.subjects.length }})</h2>
+      <div class="panel-head">
+        <h2><mat-icon>menu_book</mat-icon> Subjects ({{ c.subjects.length }})</h2>
+        <button mat-stroked-button (click)="openSubjectForm()" [disabled]="showSubjectForm()">
+          <mat-icon>add</mat-icon> Add Subject
+        </button>
+      </div>
+
+      @if (showSubjectForm()) {
+        <div class="subject-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Code</mat-label>
+            <input matInput required name="subjCode"
+                   [ngModel]="subjCode()" (ngModelChange)="subjCode.set($event)"
+                   placeholder="MATH10" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput required name="subjName"
+                   [ngModel]="subjName()" (ngModelChange)="subjName.set($event)"
+                   placeholder="Mathematics 10" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Teacher</mat-label>
+            <mat-select required name="subjTeacherId"
+                        [ngModel]="subjTeacherId()" (ngModelChange)="subjTeacherId.set($event)">
+              @for (t of teachers(); track t.id) {
+                <mat-option [value]="t.id">{{ teacherLabel(t) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="units-field">
+            <mat-label>Units</mat-label>
+            <input matInput type="number" min="0.5" step="0.5" name="subjUnits"
+                   [ngModel]="subjUnits()" (ngModelChange)="subjUnits.set($event)" />
+          </mat-form-field>
+
+          @if (subjectError()) {
+            <div class="error-msg full">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ subjectError() }}</span>
+            </div>
+          }
+
+          <div class="form-actions full">
+            <button mat-stroked-button type="button" (click)="closeSubjectForm()">Cancel</button>
+            <button mat-flat-button color="primary" (click)="addSubject()" [disabled]="addingSubject()">
+              {{ addingSubject() ? 'Adding…' : 'Add' }}
+            </button>
+          </div>
+        </div>
+      }
+
       @if (c.subjects.length === 0) {
-        <p class="muted">No subjects yet.</p>
+        <p class="muted">No subjects yet. Click <strong>Add Subject</strong> to assign one.</p>
       } @else {
         <ul class="subjects-list">
           @for (s of c.subjects; track s.id) {
@@ -48,6 +99,10 @@
               <span class="subject-code">{{ s.code }}</span>
               <span class="subject-name">{{ s.name }}</span>
               <span class="muted">{{ s.teacher.firstName }} {{ s.teacher.lastName }}</span>
+              <button mat-icon-button class="row-delete" aria-label="Remove subject"
+                      (click)="removeSubject(s.id, s.code)">
+                <mat-icon>delete</mat-icon>
+              </button>
             </li>
           }
         </ul>

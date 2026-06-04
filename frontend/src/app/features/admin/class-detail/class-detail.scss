@@ -73,7 +73,7 @@
 
   li {
     display: grid;
-    grid-template-columns: 90px 1fr auto;
+    grid-template-columns: 90px 1fr auto 40px;
     gap: 10px;
     align-items: center;
     padding: 8px 0;
@@ -93,6 +93,38 @@
   }
   .subject-name { color: var(--rnhs-text); }
   .muted { color: var(--rnhs-muted); font-size: 0.8rem; }
+  .row-delete { color: var(--rnhs-muted); &:hover { color: var(--rnhs-red); } }
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.subject-form {
+  display: grid;
+  grid-template-columns: 100px 1fr 1fr 80px;
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  background: #F8FAFC;
+  border-radius: 8px;
+  margin: 10px 0;
+
+  .full { grid-column: 1 / -1; }
+  mat-form-field { width: 100%; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .error-msg {
+    display: flex; align-items: center; gap: 8px;
+    background: #FEE2E2; color: #991B1B;
+    padding: 8px 12px; border-radius: 6px; font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .subject-form { grid-template-columns: 1fr; }
 }
 
 .students-table {
