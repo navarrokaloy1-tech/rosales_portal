@@ -1,5 +1,6 @@
 import {
   ActivityType,
+  AttendanceStatus,
   AuditAction,
   EnrollmentStatus,
   NotificationType,
@@ -194,9 +195,21 @@ function pseudoScore(seed: string, max: number, floor = 0.65, ceil = 0.97): numb
   return Math.round(pct * max * 10) / 10;
 }
 
+// Deterministic pseudo attendance status (mostly Present, some Late/Absent/Excused).
+function pseudoStatus(seed: string): AttendanceStatus {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const r = h % 100;
+  if (r < 85) return AttendanceStatus.Present;
+  if (r < 93) return AttendanceStatus.Late;
+  if (r < 98) return AttendanceStatus.Absent;
+  return AttendanceStatus.Excused;
+}
+
 async function main() {
   console.log('🧹 Wiping existing rows…');
   // Order matters: respect FK constraints.
+  await prisma.attendance.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.auditEntry.deleteMany();
   await prisma.grade.deleteMany();
@@ -294,7 +307,51 @@ async function main() {
   }
   console.log(`   ${grades.length} grades inserted`);
 
-  console.log('🔔 Inserting notifications…');
+  console.log('�️  Generating attendance…');
+  // Build the last ~10 weekday session dates (UTC, date-only).
+  const sessionDates: Date[] = [];
+  {
+    let cursor = new Date(today);
+    while (sessionDates.length < 10) {
+      const dow = cursor.getUTCDay();
+      if (dow !== 0 && dow !== 6) {
+        sessionDates.push(new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), cursor.getUTCDate())));
+      }
+      cursor = new Date(cursor.getTime() - 86400000);
+    }
+  }
+
+  const attendance: Array<{
+    id: string;
+    subjectId: string;
+    studentId: string;
+    date: Date;
+    status: AttendanceStatus;
+    markedById: string;
+  }> = [];
+  for (const subj of SUBJECTS) {
+    const classId = subjectClass.get(subj.id)!;
+    const studentIds = studentsByClass.get(classId) ?? [];
+    for (const d of sessionDates) {
+      const iso = d.toISOString().slice(0, 10);
+      for (const sid of studentIds) {
+        attendance.push({
+          id: `att-${subj.id}-${sid}-${iso}`,
+          subjectId: subj.id,
+          studentId: sid,
+          date: d,
+          status: pseudoStatus(`${subj.id}-${sid}-${iso}`),
+          markedById: subj.teacherId,
+        });
+      }
+    }
+  }
+  for (let i = 0; i < attendance.length; i += 1000) {
+    await prisma.attendance.createMany({ data: attendance.slice(i, i + 1000) });
+  }
+  console.log(`   ${attendance.length} attendance records inserted`);
+
+  console.log('�🔔 Inserting notifications…');
   await prisma.notification.createMany({
     data: [
       { id: 'n1', recipientId: 'u-s1',    title: 'New grade posted',  message: 'Math Quiz 3 - You scored 22/25.',          type: NotificationType.grade,        isRead: false, createdAt: daysAgo(2) },

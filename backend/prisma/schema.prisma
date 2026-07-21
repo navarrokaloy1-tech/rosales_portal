@@ -45,6 +45,13 @@ enum NotificationType {
   alert
 }
 
+enum AttendanceStatus {
+  Present
+  Absent
+  Late
+  Excused
+}
+
 model User {
   id                 String   @id @default(cuid())
   lrn                String?  @unique // Learner Reference Number (12-digit DepEd identifier, for records only)
@@ -68,6 +75,8 @@ model User {
   gradesEntered  Grade[]         @relation("GradeEnteredBy")
   auditEntries   AuditEntry[]
   notifications  Notification[]
+  attendance     Attendance[]    @relation("AttendanceStudent")
+  attendanceMarked Attendance[]  @relation("AttendanceMarkedBy")
 
   @@index([role])
   @@index([lastName, firstName])
@@ -99,6 +108,7 @@ model Subject {
   teacherId String
   teacher   User       @relation("SubjectTeacher", fields: [teacherId], references: [id])
   activities Activity[]
+  attendance Attendance[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -181,4 +191,23 @@ model Notification {
   createdAt   DateTime         @default(now())
 
   @@index([recipientId, isRead])
+}
+
+model Attendance {
+  id         String           @id @default(cuid())
+  subjectId  String
+  subject    Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    User             @relation("AttendanceStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  date       DateTime         @db.Date // session date (no time component)
+  status     AttendanceStatus
+  remarks    String?
+  markedById String
+  markedBy   User             @relation("AttendanceMarkedBy", fields: [markedById], references: [id])
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([subjectId, studentId, date])
+  @@index([subjectId, date])
+  @@index([studentId])
 }

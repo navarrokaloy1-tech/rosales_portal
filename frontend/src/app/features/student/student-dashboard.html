@@ -38,7 +38,44 @@
       <div class="kpi-label">At-Risk Subjects</div>
     </div>
   </mat-card>
+
+  <mat-card appearance="outlined" class="kpi-card kpi-card--blue">
+    <mat-icon class="kpi-icon">fact_check</mat-icon>
+    <div>
+      <div class="kpi-value">{{ overallAttendance() !== null ? overallAttendance() + '%' : '—' }}</div>
+      <div class="kpi-label">Attendance Rate</div>
+    </div>
+  </mat-card>
 </section>
+
+@if (attendance().length > 0) {
+  <section>
+    <h2 class="section-title">
+      <mat-icon>event_available</mat-icon>
+      My Attendance
+    </h2>
+    <div class="attendance-grid">
+      @for (a of attendance(); track a.subjectId) {
+        <mat-card appearance="outlined" class="attendance-card">
+          <div class="att-card-head">
+            <span class="subject-code">{{ a.code }}</span>
+            <span class="att-rate" [class.att-rate--low]="a.rate !== null && a.rate < 80">
+              {{ a.rate !== null ? a.rate + '%' : '—' }}
+            </span>
+          </div>
+          <h3 class="att-subject-name">{{ a.name }}</h3>
+          <div class="att-stats">
+            <span class="att-stat att-stat--present" matTooltip="Present">P {{ a.present }}</span>
+            <span class="att-stat att-stat--late" matTooltip="Late">L {{ a.late }}</span>
+            <span class="att-stat att-stat--absent" matTooltip="Absent">A {{ a.absent }}</span>
+            <span class="att-stat att-stat--excused" matTooltip="Excused">E {{ a.excused }}</span>
+          </div>
+          <div class="att-total muted">{{ a.total }} session{{ a.total === 1 ? '' : 's' }} recorded</div>
+        </mat-card>
+      }
+    </div>
+  </section>
+}
 
 <section>
   <h2 class="section-title">

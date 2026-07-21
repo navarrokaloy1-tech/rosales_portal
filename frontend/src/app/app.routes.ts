@@ -50,6 +50,12 @@ export const routes: Routes = [
           import('./features/teacher/class-record').then(m => m.ClassRecordComponent),
       },
       {
+        path: 'teacher/attendance/:subjectId',
+        canActivate: [roleGuard(['Teacher', 'Admin'])],
+        loadComponent: () =>
+          import('./features/teacher/attendance/attendance').then(m => m.TeacherAttendanceComponent),
+      },
+      {
         path: 'admin',
         canActivate: [roleGuard(['Admin'])],
         loadComponent: () =>

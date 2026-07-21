@@ -181,6 +181,11 @@
         <mat-icon>edit_note</mat-icon>
         Open Class Record
       </button>
+      <button mat-stroked-button class="attendance-btn"
+              [routerLink]="['/teacher', 'attendance', s.subject.id]">
+        <mat-icon>fact_check</mat-icon>
+        Attendance
+      </button>
     </mat-card>
   } @empty {
     <p class="muted empty">No classes yet. Click <strong>Add Class</strong> to create one.</p>

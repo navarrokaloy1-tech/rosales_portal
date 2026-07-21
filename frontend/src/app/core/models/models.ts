@@ -98,3 +98,29 @@ export interface TermGrade {
   transmutedGrade: number;       // DepEd transmuted (out of 100)
   descriptor: 'Outstanding' | 'Very Satisfactory' | 'Satisfactory' | 'Fairly Satisfactory' | 'Did Not Meet';
 }
+
+// Attendance
+export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
+
+export interface AttendanceRecord {
+  id: string;
+  subjectId: string;
+  studentId: string;
+  date: string;          // ISO date (YYYY-MM-DD)
+  status: AttendanceStatus;
+  remarks?: string | null;
+  student?: { id: string; firstName: string; lastName: string; lrn?: string | null; studentId?: string | null };
+  subject?: { id: string; code: string; name: string };
+}
+
+export interface AttendanceSummaryRow {
+  subjectId: string;
+  code: string;
+  name: string;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  total: number;
+  rate: number | null;   // (present + late) / total, as a percentage
+}

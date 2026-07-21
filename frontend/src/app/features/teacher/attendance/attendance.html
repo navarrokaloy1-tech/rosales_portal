@@ -1,0 +1,84 @@
+<section class="att-header">
+  <div>
+    <a routerLink="/teacher" class="back-link">
+      <mat-icon>arrow_back</mat-icon> Back to My Classes
+    </a>
+    <h1>
+      <span class="subject-code">{{ subject()?.code }}</span>
+      Attendance
+    </h1>
+    <p class="muted">
+      {{ subject()?.name }} · {{ schoolClass()?.name }} ·
+      Teacher: {{ teacher()?.firstName }} {{ teacher()?.lastName }}
+    </p>
+  </div>
+
+  <div class="actions">
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>Session date</mat-label>
+      <input matInput type="date"
+             [ngModel]="date()" (ngModelChange)="onDateChange($event)"
+             [max]="date()" name="date" />
+    </mat-form-field>
+
+    @if (canEdit()) {
+      <button mat-stroked-button (click)="markAllPresent()" [disabled]="loading() || saving()">
+        <mat-icon>done_all</mat-icon> Mark all present
+      </button>
+      <button mat-flat-button color="primary" (click)="save()" [disabled]="loading() || saving()">
+        <mat-icon>save</mat-icon> {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
+    }
+  </div>
+</section>
+
+@if (!canEdit() && currentUser()?.role === 'Teacher') {
+  <div class="banner banner--warn">
+    <mat-icon>lock</mat-icon>
+    You are not the assigned teacher for this subject. View is read-only.
+  </div>
+}
+@if (!canEdit() && currentUser()?.role === 'Admin') {
+  <div class="banner banner--info">
+    <mat-icon>visibility</mat-icon>
+    Admin view — read-only.
+  </div>
+}
+
+<section class="summary-chips">
+  <span class="chip chip--present">Present {{ counts().Present }}</span>
+  <span class="chip chip--late">Late {{ counts().Late }}</span>
+  <span class="chip chip--absent">Absent {{ counts().Absent }}</span>
+  <span class="chip chip--excused">Excused {{ counts().Excused }}</span>
+  <span class="chip chip--unmarked">Unmarked {{ counts().Unmarked }}</span>
+</section>
+
+<div class="roster">
+  @for (st of students(); track st.id) {
+    <div class="roster-row" [class.unmarked]="!statusOf(st.id)">
+      <div class="student-cell">
+        <div class="avatar-sm" [style.background]="st.avatarColor">
+          {{ st.lastName[0] }}{{ st.firstName[0] }}
+        </div>
+        <div>
+          <div class="student-name">{{ st.lastName }}, {{ st.firstName }}</div>
+          <div class="student-lrn">LRN {{ st.lrn }}</div>
+        </div>
+      </div>
+
+      <mat-button-toggle-group
+        class="status-toggle"
+        [value]="statusOf(st.id)"
+        (change)="setStatus(st.id, $event.value)"
+        [disabled]="!canEdit()">
+        @for (s of statuses; track s) {
+          <mat-button-toggle [value]="s" [matTooltip]="s" class="status-{{ s }}">
+            {{ s[0] }}
+          </mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+    </div>
+  } @empty {
+    <p class="muted empty">No students enrolled in this class.</p>
+  }
+</div>

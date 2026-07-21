@@ -12,7 +12,8 @@ import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../../core/services/auth.service';
 import { DataService } from '../../core/services/data.service';
-import { Activity, Term, TermGrade, Subject } from '../../core/models/models';
+import { AttendanceApiService } from '../../core/services/attendance-api.service';
+import { Activity, Term, TermGrade, Subject, AttendanceSummaryRow } from '../../core/models/models';
 import { GradeChipPipe } from '../../shared/grade-chip.pipe';
 
 interface SubjectSummary {
@@ -36,9 +37,28 @@ interface SubjectSummary {
 export class StudentDashboardComponent {
   private auth = inject(AuthService);
   private data = inject(DataService);
+  private attendanceApi = inject(AttendanceApiService);
 
   readonly user = this.auth.currentUser;
   readonly term = signal<Term>(2);
+
+  readonly attendance = signal<AttendanceSummaryRow[]>([]);
+
+  readonly overallAttendance = computed(() => {
+    const rows = this.attendance().filter(r => r.rate !== null);
+    if (rows.length === 0) return null;
+    const totalSessions = rows.reduce((a, r) => a + r.total, 0);
+    const attended = rows.reduce((a, r) => a + r.present + r.late, 0);
+    return totalSessions === 0 ? null : Math.round((attended / totalSessions) * 1000) / 10;
+  });
+
+  async ngOnInit() {
+    try {
+      this.attendance.set(await this.attendanceApi.summary());
+    } catch {
+      this.attendance.set([]);
+    }
+  }
 
   readonly studentClass = computed(() => {
     const u = this.user(); return u ? this.data.classForStudent(u.id) : undefined;
