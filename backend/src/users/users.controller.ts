@@ -28,7 +28,7 @@ export class UsersController {
   }
 
   @Post('students')
-  @Roles(Role.Admin)
+  @Roles(Role.Admin, Role.Teacher)
   createStudent(@Body() dto: CreateStudentDto) {
     return this.users.createStudent(dto);
   }

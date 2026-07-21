@@ -33,6 +33,40 @@ mat-form-field { width: 100%; }
 }
 .card-actions { display: flex; }
 
+.roster-section {
+  border-top: 1px solid var(--rnhs-border);
+  padding-top: 16px;
+  h3 { margin: 0 0 2px; font-size: 1rem; color: var(--rnhs-blue); }
+  .muted { color: var(--rnhs-muted); font-size: 0.85rem; margin: 0 0 12px; }
+}
+.roster-add-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  .roster-search { flex: 1 1 320px; }
+  button { margin-top: 6px; white-space: nowrap; }
+}
+.new-student-card {
+  background: #FFFBEA;
+  border: 1px solid var(--rnhs-border);
+  border-radius: var(--rnhs-radius-md);
+  padding: 16px;
+  margin: 4px 0 14px;
+  h4 { margin: 0 0 12px; font-size: 0.95rem; color: var(--rnhs-red); }
+}
+.new-student-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  .span-2 { grid-column: 1 / -1; }
+}
+.new-student-actions {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;
+}
+.roster-chips { margin-top: 4px; }
+.roster-empty { font-style: italic; margin: 4px 0 0; }
+
 .subjects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

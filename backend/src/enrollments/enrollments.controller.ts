@@ -16,7 +16,7 @@ export class EnrollmentsController {
   }
 
   @Post()
-  @Roles(Role.Admin)
+  @Roles(Role.Admin, Role.Teacher)
   create(@Body() dto: CreateEnrollmentDto) {
     return this.enrollments.create(dto);
   }

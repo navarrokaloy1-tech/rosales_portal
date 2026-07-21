@@ -66,6 +66,22 @@ export class DataService {
     this._subjects.update(list => list.filter(s => s.id !== id));
   }
 
+  /** Add or replace a single user (used after a teacher/admin creates a student). */
+  upsertUser(u: User) {
+    this._users.update(list => {
+      const without = list.filter(x => x.id !== u.id);
+      return [...without, u];
+    });
+  }
+
+  /** Enroll a student into a class in the local store (mirrors a backend enrollment). */
+  addEnrollment(e: Enrollment) {
+    this._enrollments.update(list => {
+      const without = list.filter(x => !(x.studentId === e.studentId && x.classId === e.classId));
+      return [...without, { ...e, status: 'Active' as const }];
+    });
+  }
+
   studentsInClass(classId: string): User[] {
     const ids = new Set(this._enrollments().filter(e => e.classId === classId && e.status === 'Active').map(e => e.studentId));
     return this._users().filter(u => ids.has(u.id));

@@ -46,6 +46,88 @@
                [ngModel]="units()" (ngModelChange)="units.set($event)" name="units" />
       </mat-form-field>
 
+      <div class="roster-section span-2">
+        <h3>Students</h3>
+        <p class="muted">Build this class's roster yourself. Search existing students, or create a new one if they don't exist yet.</p>
+
+        <div class="roster-add-row">
+          <mat-form-field appearance="outline" class="roster-search">
+            <mat-label>Search student</mat-label>
+            <input matInput
+                   [matAutocomplete]="auto"
+                   [ngModel]="studentQuery()" (ngModelChange)="onQueryChange($event)"
+                   [ngModelOptions]="{ standalone: true }"
+                   placeholder="Name, Student ID, or LRN" />
+            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayStudent" (optionSelected)="pickExisting($event)">
+              @for (s of studentOptions(); track s.id) {
+                <mat-option [value]="s">{{ studentLabel(s) }}</mat-option>
+              } @empty {
+                <mat-option [disabled]="true">No matching students</mat-option>
+              }
+            </mat-autocomplete>
+            <mat-hint>Pick a student to add them to the roster.</mat-hint>
+          </mat-form-field>
+
+          <button mat-stroked-button type="button" (click)="openNewStudent()" [disabled]="showNewStudent()">
+            <mat-icon>person_add</mat-icon> New student
+          </button>
+        </div>
+
+        @if (showNewStudent()) {
+          <div class="new-student-card">
+            <h4>Create a new student</h4>
+            <div class="new-student-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>First name</mat-label>
+                <input matInput [ngModel]="nsFirstName()" (ngModelChange)="nsFirstName.set($event)"
+                       [ngModelOptions]="{ standalone: true }" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Last name</mat-label>
+                <input matInput [ngModel]="nsLastName()" (ngModelChange)="nsLastName.set($event)"
+                       [ngModelOptions]="{ standalone: true }" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Student ID</mat-label>
+                <input matInput [ngModel]="nsStudentId()" (ngModelChange)="nsStudentId.set($event)"
+                       [ngModelOptions]="{ standalone: true }" placeholder="S-30041" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>LRN (optional)</mat-label>
+                <input matInput [ngModel]="nsLrn()" (ngModelChange)="nsLrn.set($event)"
+                       [ngModelOptions]="{ standalone: true }" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="span-2">
+                <mat-label>Email</mat-label>
+                <input matInput type="email" [ngModel]="nsEmail()" (ngModelChange)="nsEmail.set($event)"
+                       [ngModelOptions]="{ standalone: true }" placeholder="firstname.lastname@student.rnhs.edu.ph" />
+              </mat-form-field>
+            </div>
+            <div class="new-student-actions">
+              <button mat-stroked-button type="button" (click)="cancelNewStudent()">Cancel</button>
+              <button mat-flat-button color="primary" type="button" (click)="addNewStudent()" [disabled]="addingStudent()">
+                {{ addingStudent() ? 'Adding…' : 'Add to roster' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (roster().length) {
+          <mat-chip-set class="roster-chips">
+            @for (s of roster(); track s.id) {
+              <mat-chip (removed)="removeFromRoster(s.id)">
+                {{ s.lastName }}, {{ s.firstName }}
+                <button matChipRemove [attr.aria-label]="'Remove ' + s.firstName">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip>
+            }
+          </mat-chip-set>
+        } @else {
+          <p class="muted roster-empty">No students added yet.</p>
+        }
+      </div>
+
       @if (error()) {
         <div class="error-msg span-2">
           <mat-icon>error_outline</mat-icon>
