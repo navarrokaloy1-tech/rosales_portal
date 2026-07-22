@@ -4,6 +4,20 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { CreateStudentDto, CreateTeacherDto } from './dto';
 
+export interface BulkRowResult {
+  row: number;
+  name: string;
+  status: 'created' | 'failed';
+  defaultPassword?: string;
+  error?: string;
+}
+
+export interface BulkResult {
+  created: number;
+  failed: number;
+  results: BulkRowResult[];
+}
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -50,6 +64,36 @@ export class UsersService {
     });
   }
 
+  async bulkCreateTeachers(rows: CreateTeacherDto[]): Promise<BulkResult> {
+    const results: BulkRowResult[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const dto = rows[i];
+      const name = `${dto.firstName} ${dto.lastName}`.trim();
+      try {
+        await this.createTeacher(dto);
+        results.push({ row: i + 1, name, status: 'created', defaultPassword: dto.employeeId });
+      } catch (e) {
+        results.push({ row: i + 1, name, status: 'failed', error: toMessage(e) });
+      }
+    }
+    return summarise(results);
+  }
+
+  async bulkCreateStudents(rows: CreateStudentDto[]): Promise<BulkResult> {
+    const results: BulkRowResult[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const dto = rows[i];
+      const name = `${dto.firstName} ${dto.lastName}`.trim();
+      try {
+        await this.createStudent(dto);
+        results.push({ row: i + 1, name, status: 'created', defaultPassword: dto.studentId });
+      } catch (e) {
+        results.push({ row: i + 1, name, status: 'failed', error: toMessage(e) });
+      }
+    }
+    return summarise(results);
+  }
+
   private async create(data: Prisma.UserUncheckedCreateInput): Promise<User> {
     try {
       return await this.prisma.user.create({ data });
@@ -61,4 +105,27 @@ export class UsersService {
       throw e;
     }
   }
+}
+
+function summarise(results: BulkRowResult[]): BulkResult {
+  return {
+    created: results.filter(r => r.status === 'created').length,
+    failed: results.filter(r => r.status === 'failed').length,
+    results,
+  };
+}
+
+function toMessage(e: unknown): string {
+  if (e instanceof ConflictException) {
+    const res = e.getResponse();
+    if (typeof res === 'string') return res;
+    if (typeof res === 'object' && res !== null && 'message' in res) {
+      const msg = (res as { message?: unknown }).message;
+      if (typeof msg === 'string') return msg;
+      if (Array.isArray(msg)) return msg.join('; ');
+    }
+    return e.message;
+  }
+  if (e instanceof Error) return e.message;
+  return 'Unknown error';
 }

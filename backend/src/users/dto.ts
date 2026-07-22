@@ -1,4 +1,15 @@
-import { IsEmail, IsHexColor, IsOptional, IsString, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsEmail,
+  IsHexColor,
+  IsOptional,
+  IsString,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
 
 export class CreateTeacherDto {
   @IsString() @MinLength(1)
@@ -16,6 +27,15 @@ export class CreateTeacherDto {
   @IsOptional()
   @IsHexColor()
   avatarColor?: string;
+}
+
+export class BulkCreateTeacherDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(1000)
+  @ValidateNested({ each: true })
+  @Type(() => CreateTeacherDto)
+  rows!: CreateTeacherDto[];
 }
 
 export class CreateStudentDto {
@@ -37,4 +57,13 @@ export class CreateStudentDto {
   @IsOptional()
   @IsHexColor()
   avatarColor?: string;
+}
+
+export class BulkCreateStudentDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(1000)
+  @ValidateNested({ each: true })
+  @Type(() => CreateStudentDto)
+  rows!: CreateStudentDto[];
 }

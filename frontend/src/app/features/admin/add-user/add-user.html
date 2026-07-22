@@ -24,6 +24,18 @@
     </mat-button-toggle-group>
   </div>
 
+  <div class="view-row">
+    <mat-button-toggle-group [value]="view()" (change)="switchView($event.value)" class="view-toggle">
+      <mat-button-toggle value="single">
+        <mat-icon>person_add</mat-icon> Single
+      </mat-button-toggle>
+      <mat-button-toggle value="bulk">
+        <mat-icon>upload_file</mat-icon> Bulk Upload
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  @if (view() === 'single') {
   <form (ngSubmit)="submit()" class="form-grid">
     @if (mode() === 'Teacher') {
       <mat-form-field appearance="outline">
@@ -94,4 +106,125 @@
       </button>
     </div>
   </form>
+  } @else {
+  <div class="bulk-section">
+    <div class="bulk-intro">
+      <p class="muted">
+        Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file to create many
+        {{ mode() === 'Teacher' ? 'teachers' : 'students' }} at once. Not sure about the
+        columns? Download the CSV template first.
+      </p>
+      <button mat-stroked-button type="button" (click)="downloadTemplate()">
+        <mat-icon>download</mat-icon> Download {{ mode() }} CSV Template
+      </button>
+    </div>
+
+    <label class="dropzone">
+      <input type="file" accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" hidden />
+      <mat-icon>cloud_upload</mat-icon>
+      <span>{{ fileName() ?? 'Choose a spreadsheet file to upload' }}</span>
+      <span class="muted">Accepted: .xlsx, .xls, .csv</span>
+    </label>
+
+    @if (parseError()) {
+      <div class="error-msg">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ parseError() }}</span>
+      </div>
+    }
+
+    @if (parsedRows().length > 0) {
+      <div class="preview">
+        <div class="preview-head">
+          <strong>{{ parsedRows().length }}</strong> row(s) ready to import
+        </div>
+        <div class="table-scroll">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>{{ mode() === 'Teacher' ? 'Employee ID' : 'Student ID' }}</th>
+                @if (mode() === 'Student') { <th>LRN</th> }
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of parsedRows(); track $index) {
+                <tr>
+                  <td>{{ $index + 1 }}</td>
+                  <td>{{ mode() === 'Teacher' ? r.employeeId : r.studentId }}</td>
+                  @if (mode() === 'Student') { <td>{{ r.lrn || '—' }}</td> }
+                  <td>{{ r.firstName }}</td>
+                  <td>{{ r.lastName }}</td>
+                  <td>{{ r.email }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="clearBulk()" [disabled]="bulkSubmitting()">
+            Clear
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="submitBulk()" [disabled]="bulkSubmitting()">
+            <mat-icon>group_add</mat-icon>
+            {{ bulkSubmitting() ? 'Importing…' : 'Import ' + parsedRows().length + ' ' + (mode() === 'Teacher' ? 'Teachers' : 'Students') }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (bulkResult(); as res) {
+      <div class="bulk-result">
+        <div class="result-summary">
+          <span class="chip ok"><mat-icon>check_circle</mat-icon> {{ res.created }} created</span>
+          @if (res.failed > 0) {
+            <span class="chip fail"><mat-icon>error</mat-icon> {{ res.failed }} failed</span>
+          }
+        </div>
+        <div class="table-scroll">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Default Password / Error</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of res.results; track r.row) {
+                <tr [class.row-fail]="r.status === 'failed'">
+                  <td>{{ r.row }}</td>
+                  <td>{{ r.name }}</td>
+                  <td>
+                    @if (r.status === 'created') {
+                      <span class="status-ok">Created</span>
+                    } @else {
+                      <span class="status-fail">Failed</span>
+                    }
+                  </td>
+                  <td>
+                    @if (r.status === 'created') {
+                      <code>{{ r.defaultPassword }}</code>
+                    } @else {
+                      {{ r.error }}
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">
+          Created users' default password is their
+          {{ mode() === 'Teacher' ? 'Employee ID' : 'Student ID' }}. They'll be prompted to
+          change it on first login.
+        </p>
+      </div>
+    }
+  </div>
+  }
 </mat-card>

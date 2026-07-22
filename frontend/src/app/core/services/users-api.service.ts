@@ -21,6 +21,20 @@ export interface CreateStudentPayload {
   avatarColor?: string;
 }
 
+export interface BulkRowResult {
+  row: number;
+  name: string;
+  status: 'created' | 'failed';
+  defaultPassword?: string;
+  error?: string;
+}
+
+export interface BulkResult {
+  created: number;
+  failed: number;
+  results: BulkRowResult[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class UsersApiService {
   private http = inject(HttpClient);
@@ -37,5 +51,13 @@ export class UsersApiService {
 
   createStudent(payload: CreateStudentPayload): Promise<User> {
     return firstValueFrom(this.http.post<User>(`${this.base}/students`, payload));
+  }
+
+  bulkCreateTeachers(rows: CreateTeacherPayload[]): Promise<BulkResult> {
+    return firstValueFrom(this.http.post<BulkResult>(`${this.base}/teachers/bulk`, { rows }));
+  }
+
+  bulkCreateStudents(rows: CreateStudentPayload[]): Promise<BulkResult> {
+    return firstValueFrom(this.http.post<BulkResult>(`${this.base}/students/bulk`, { rows }));
   }
 }
